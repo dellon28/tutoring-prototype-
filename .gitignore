@@ -1,0 +1,40 @@
+# Dependency Directories
+#########################
+# Node dependencies (created by npm install)
+node_modules/
+
+# Local Build Outputs
+#####################
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime files
+*.pid
+*.seed
+*.lock
+
+# Environment/Credentials
+###########################
+# This is CRITICAL for security. You should not commit environment variables or secrets.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files (if using a local SQLite/test DB)
+##################################################
+*.db
+*.sqlite
+
+# OS and Editor Files
+#####################
+# macOS
+.DS_Store
+# VS Code (if you are using it)
+.vscode/
+# Windows thumbnails
+Thumbs.db
