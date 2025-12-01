@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Tutoring Scheduler Prototype</title>
+    <style>
+        /* CSS for Usability and Responsiveness (cite: 745, 753) */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
+        header { background-color: #004d99; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .dashboard { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #004d99; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-top: 0; }
+        .role-selector button { padding: 10px 15px; margin-right: 10px; cursor: pointer; background-color: #e0e0e0; border: none; border-radius: 4px; transition: background-color 0.3s; }
+        .role-selector button.active { background-color: #007bff; color: white; }
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-group button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        .form-group button:hover { background-color: #218838; }
+        /* Schedule Viewer (cite: 919) */
+        .schedule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
+        .session-card { border: 1px solid #ddd; padding: 15px; border-radius: 6px; background-color: #f9f9f9; }
+        .session-card h4 { margin-top: 0; color: #007bff; }
+        .session-card button { display: block; width: 100%; margin-top: 10px; padding: 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        /* Admin Dashboard Specifics */
+        .admin-controls button { background-color: #dc3545; margin-right: 10px; }
+        .admin-controls button:hover { background-color: #c82333; }
+        /* Mobile Responsiveness (cite: 586) */
+        @media (max-width: 600px) {
+            header { padding: 15px; }
+            .container { margin: 10px; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Physics Department Tutoring Scheduling System</h1>
+    </header>
+    <div class="container">
+        <div class="role-selector">
+            <h3>Select User Role (Mock Authentication)</h3>
+            <button id="role-student">Student</button>
+            <button id="role-tutor">Tutor</button>
+            <button id="role-admin">Admin</button>
+        </div>
+
+        <hr>
+
+        <div id="app-content">
+            <p>Please select a user role to begin the prototype demonstration.</p>
+        </div>
+    </div>
+
+    <script>
+        // Mock data structures (Data Repository simulation - cite: 893)
+        let currentUser = { role: null, id: 101, name: "Prototype User" };
+
+        let mockSessions = [
+            { id: 1, tutor: "Dr. Smith", date: "2025-12-05", time: "10:00", capacity: 5, bookings: 2, topic: "Quantum Mechanics" },
+            { id: 2, tutor: "Tutor Jones", date: "2025-12-05", time: "14:00", capacity: 1, bookings: 1, topic: "Classical Physics" },
+            { id: 3, tutor: "Dr. Smith", date: "2025-12-06", time: "09:00", capacity: 10, bookings: 0, topic: "Thermodynamics" },
+        ];
+        
+        let mockPendingUsers = [
+            { id: 201, name: "New Tutor Alex", role: "Tutor", status: "Pending" },
+            { id: 301, name: "New Student Ben", role: "Student", status: "Pending" },
+        ];
+
+        // --- Core Application Logic (Simulated API Interaction - cite: 869) ---
+
+        /** Simulates the Notification System sending a confirmation (cite: 664) */
+        function triggerNotification(message) {
+            alert(`[Notification System] ${message}`); // Simple alert for prototype
+            console.log(`[Notification Log] ${new Date().toLocaleTimeString()}: ${message}`);
+        }
+
+        /** Simulates the Scheduling & Booking Logic (cite: 872) */
+        function bookSession(sessionId) {
+            const session = mockSessions.find(s => s.id === sessionId);
+            if (!session) return alert("Error: Session not found.");
+            if (session.bookings >= session.capacity) return alert("Error: Session is fully booked.");
+
+            session.bookings++;
+            triggerNotification(`Session booked! You are confirmed for ${session.tutor} on ${session.date} at ${session.time}.`);
+            console.log(`[Booking Logic] Student ${currentUser.id} booked session ${sessionId}. Current bookings: ${session.bookings}`);
+            renderAppContent(currentUser.role);
+        }
+
+        /** Simulates Tutor Session Creation Logic (cite: 635) */
+        function createSession(tutor, date, time, topic, capacity) {
+            const newId = mockSessions.length + 1;
+            mockSessions.push({ id: newId, tutor, date, time, topic, capacity: parseInt(capacity), bookings: 0 });
+            triggerNotification(`Session created! ID ${newId} with ${tutor} on ${date} at ${time}.`);
+            console.log(`[Scheduling Logic] New session created by Tutor ${currentUser.id}.`);
+            renderAppContent(currentUser.role);
+        }
+
+        /** Simulates Admin Approval/Removal Logic (cite: 682, 683, 710) */
+        function processUserRequest(userId, action) {
+            const index = mockPendingUsers.findIndex(u => u.id === userId);
+            if (index === -1) {
+                alert("Error: User not found in pending list.");
+                return;
+            }
+
+            const user = mockPendingUsers.splice(index, 1)[0];
+            
+            if (action === 'approve') {
+                alert(`SUCCESS: Approved ${user.role} ${user.name}. User now active.`);
+                // In a real system, this would move the user to the active User Repository (cite: 886)
+                triggerNotification(`Welcome, ${user.name}! Your ${user.role} account is now active.`);
+            } else if (action === 'remove') {
+                alert(`SUCCESS: Removed user ${user.name}.`);
+                // In a real system, this would log the deletion (cite: 888) and soft-delete the user.
+            }
+            console.log(`[Admin Logic] ${user.role} ${user.name} was ${action}d by Admin ${currentUser.id}.`);
+            renderAppContent(currentUser.role);
+        }
+
+        // --- Presentation Layer (UI Rendering - cite: 853) ---
+
+        function renderStudentView() {
+            const content = `
+                <div class="dashboard">
+                    <h2>📚 Student Schedule Viewer</h2>
+                    <p>Welcome back, ${currentUser.name}! View and book available tutoring sessions below.</p>
+                    <div class="schedule-grid" id="session-list">
+                        </div>
+                </div>
+            `;
+            document.getElementById('app-content').innerHTML = content;
+            
+            const list = document.getElementById('session-list');
+            mockSessions.forEach(session => {
+                const isBooked = session.bookings > 0 && currentUser.id === session.id; // Mock simple check
+                const card = document.createElement('div');
+                card.className = 'session-card';
+                card.innerHTML = `
+                    <h4>${session.topic} with ${session.tutor}</h4>
+                    <p><strong>Date:</strong> ${session.date}<br>
+                       <strong>Time:</strong> ${session.time}<br>
+                       <strong>Slots:</strong> ${session.bookings}/${session.capacity}</p>
+                    ${isBooked 
+                        ? '<button style="background-color: #6c757d;" disabled>BOOKED</button>' 
+                        : (session.bookings < session.capacity 
+                            ? `<button onclick="bookSession(${session.id})">Book Session</button>` 
+                            : '<button style="background-color: #dc3545;" disabled>FULL</button>')
+                    }
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function renderTutorView() {
+            const sessionList = mockSessions.filter(s => s.tutor.includes(currentUser.name.split(' ')[1] || 'Smith')); // Simple mock filtering
+            const content = `
+                <div class="dashboard">
+                    <h2>📝 Tutor Session Management</h2>
+                    <p>Welcome, ${currentUser.name}! Create a new session or view your current schedule.</p>
+                    
+                    <h3>Create New Session (cite: 635)</h3>
+                    <div class="form-group">
+                        <label for="topic">Topic:</label><input type="text" id="topic" value="Physics 101 Review" required>
+                        <label for="date">Date:</label><input type="date" id="date" value="2025-12-10" required>
+                        <label for="time">Time:</label><input type="time" id="time" value="11:00" required>
+                        <label for="capacity">Capacity:</label><input type="number" id="capacity" value="5" min="1" required>
+                        <button onclick="handleCreateSession()">Create Session</button>
+                    </div>
+
+                    <h3>My Current Schedule (cite: 637)</h3>
+                    <div class="schedule-grid">
+                        ${sessionList.map(s => `
+                            <div class="session-card">
+                                <h4>${s.topic}</h4>
+                                <p><strong>Date/Time:</strong> ${s.date} at ${s.time}<br>
+                                   <strong>Bookings:</strong> ${s.bookings}/${s.capacity}</p>
+                                <button style="background-color: #ffc107; color: #333;" disabled>Edit/Cancel (Prototype)</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('app-content').innerHTML = content;
+        }
+
+        function handleCreateSession() {
+            const topic = document.getElementById('topic').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const capacity = document.getElementById('capacity').value;
+            createSession(currentUser.name, date, time, topic, capacity);
+        }
+
+        function renderAdminView() {
+            const content = `
+                <div class="dashboard">
+                    <h2>⚙️ Admin Control Panel (cite: 679)</h2>
+                    <p>Welcome, Administrator! Manage pending users and generate reports.</p>
+                    
+                    <h3>Pending Registrations (Admissions - cite: 682, 683)</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #e9ecef;"><th>ID</th><th>Name</th><th>Role</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            ${mockPendingUsers.map(user => `
+                                <tr style="border-top: 1px solid #ddd;">
+                                    <td>${user.id}</td>
+                                    <td>${user.name}</td>
+                                    <td>${user.role}</td>
+                                    <td class="admin-controls">
+                                        <button style="background-color: #28a745;" onclick="processUserRequest(${user.id}, 'approve')">Approve</button>
+                                        <button onclick="processUserRequest(${user.id}, 'remove')">Deny/Remove</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            ${mockPendingUsers.length === 0 ? '<tr><td colspan="4" style="text-align: center;">No pending requests.</td></tr>' : ''}
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top: 30px;">System Actions</h3>
+                    <div class="admin-controls">
+                        <button style="background-color: #007bff;" onclick="alert('Generating report for ${mockSessions.length} sessions (cite: 681)... Check console log for details.')">Generate Session Report</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('app-content').innerHTML = content;
+        }
+
+        function renderAppContent(role) {
+            document.querySelectorAll('.role-selector button').forEach(btn => btn.classList.remove('active'));
+            if (role) {
+                document.getElementById(`role-${role.toLowerCase()}`).classList.add('active');
+            }
+
+            switch (role) {
+                case 'Student':
+                    renderStudentView();
+                    break;
+                case 'Tutor':
+                    currentUser.name = "Dr. Smith"; // Assign specific name for tutor view mock filter
+                    renderTutorView();
+                    break;
+                case 'Admin':
+                    currentUser.name = "Admin Doe"; // Assign specific name for admin view
+                    renderAdminView();
+                    break;
+                default:
+                    document.getElementById('app-content').innerHTML = '<p>Please select a user role to begin the prototype demonstration.</p>';
+            }
+            console.log(`[Authentication] User set to Role: ${role} | Name: ${currentUser.name}`);
+        }
+
+        // Event Listeners for Role Selection
+        document.getElementById('role-student').addEventListener('click', () => {
+            currentUser.role = 'Student';
+            currentUser.name = "Student John";
+            renderAppContent('Student');
+        });
+        document.getElementById('role-tutor').addEventListener('click', () => {
+            currentUser.role = 'Tutor';
+            currentUser.name = "Dr. Smith";
+            renderAppContent('Tutor');
+        });
+        document.getElementById('role-admin').addEventListener('click', () => {
+            currentUser.role = 'Admin';
+            currentUser.name = "Admin Doe";
+            renderAppContent('Admin');
+        });
+
+    </script>
+</body>
+</html>
