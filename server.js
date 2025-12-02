@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -73,6 +72,54 @@ function verifyPassword(password, record) {
   if (!record?.salt || !record?.hash) return false;
   const hash = scryptHash(password, record.salt);
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(record.hash, "hex"));
+}
+
+/**
+ * Checks if a student is already booked for another session at the requested date/time.
+ * @param {string} studentId The ID of the student attempting to book.
+ * @param {string} targetDate The date of the session being booked (e.g., '2025-12-10').
+ * @param {string} targetTime The time of the session being booked (e.g., '11:00').
+ * @returns {boolean} True if a clash exists, false otherwise.
+ */
+function checkStudentClash(studentId, targetDate, targetTime) {
+    const db1 = readDb1(); // Reads data from db1.json (sessions.docx content)
+
+    // 1. Find all bookings that involve the current student.
+    const studentBookings = db1.bookings.filter(b => b.studentId === studentId);
+
+    // 2. Check if any of these booked sessions clash with the target time.
+    const isClash = studentBookings.some(booking => {
+        // Find the session details for the student's existing booking.
+        const bookedSession = db1.sessions.find(s => s.id === booking.sessionId);
+        
+        // Ensure the session exists and check for time overlap.
+        return bookedSession && 
+               bookedSession.date === targetDate && 
+               bookedSession.time === targetTime;
+    });
+
+    return isClash;
+}
+
+/**
+ * Checks if a tutor is already scheduled for a session at the given time/date.
+ * @param {string} tutorId The ID of the tutor creating the session.
+ * @param {string} targetDate The date of the session being created (e.g., '2025-12-10').
+ * @param {string} targetTime The time of the session being created (e.g., '11:00').
+ * @returns {boolean} True if a clash exists, false otherwise.
+ */
+function checkTutorClash(tutorId, targetDate, targetTime) {
+    const db1 = readDb1(); // Reads data from db1.json (sessions.docx content)
+    
+    // Find any existing active session that matches the tutorId, date, and time
+    const clash = db1.sessions.some(session => 
+        session.tutorId === tutorId &&
+        session.date === targetDate &&
+        session.time === targetTime &&
+        session.status === 'active' // Ensure it's not a cancelled session
+    );
+    
+    return clash;
 }
 
 // -------------------------
@@ -419,6 +466,7 @@ app.post("/api/admin/users/:id/deny", authRequired, adminOnly, (req, res) => {
 // -------------------------
 // Sessions API (db1.json)
 // -------------------------
+
 app.get("/api/sessions", authRequired, (req, res) => {
   const db1 = readDb1();
 
@@ -466,6 +514,13 @@ app.post("/api/sessions", authRequired, tutorOnly, (req, res) => {
     return res.status(400).json(body);
   }
 
+    // NEW: Check for tutor schedule clashes
+    if (checkTutorClash(req.user.id, date, time)) {
+        const body = { message: "Scheduling conflict: You already have a session scheduled at this exact date and time." };
+        if (idem) idemRemember(idem, 409, body);
+        return res.status(409).json(body);
+    }
+    
   const db1 = readDb1();
   const now = Date.now();
 
@@ -518,7 +573,14 @@ app.post("/api/sessions/:id/book", authRequired, studentOnly, (req, res) => {
     return res.status(404).json(body);
   }
 
-  // prevent double booking
+    // NEW: Check for student schedule clashes
+    if (checkStudentClash(req.user.id, session.date, session.time)) {
+        const body = { message: "Conflict: You are already booked for another session at this exact date and time." };
+        if (idem) idemRemember(idem, 409, body);
+        return res.status(409).json(body);
+    }
+
+  // prevent duplicate booking
   const already = db1.bookings.find(b => b.sessionId === sessionId && b.studentId === req.user.id);
   if (already) {
     const body = { message: "Already booked.", booking: already, deduped: true, session };
@@ -799,3 +861,4 @@ server.listen(PORT, () => {
   ensureDb1();
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
+

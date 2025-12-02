@@ -95,6 +95,18 @@
         "algo": "scrypt"
       },
       "createdAt": 1764683287194
+    },
+    {
+      "id": "1e99e7c2-c013-4630-8263-31357df6dada",
+      "name": "Grace Kennedy",
+      "role": "Student",
+      "status": "active",
+      "password": {
+        "salt": "39dfeb7b079c2769d9a289665c8063ae",
+        "hash": "c20f01e81057c8b33a331318fc5313fff22a5096e7d4ad76ff7b8d2b383011a3e05b7e11272dcfb5aa60724dfdb3256c9724effa9ccacacb3189e2246319581a",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764704671847
     }
   ],
   "rooms": {
@@ -223,6 +235,13 @@
       "participants": [
         "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
         "06747a23-6010-48f1-8a4e-3d2b0ade954b"
+      ],
+      "messages": []
+    },
+    "dm:1e99e7c2-c013-4630-8263-31357df6dada:tutor-1": {
+      "participants": [
+        "1e99e7c2-c013-4630-8263-31357df6dada",
+        "tutor-1"
       ],
       "messages": []
     }

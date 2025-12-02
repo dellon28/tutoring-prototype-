@@ -32,6 +32,17 @@
       "capacity": 1,
       "createdAt": 1764684529668,
       "status": "active"
+    },
+    {
+      "id": "973605d7-e11f-47a6-981c-6235257e2d44",
+      "tutorId": "tutor-1",
+      "tutorName": "Dr. Smith",
+      "topic": "z Transform difficulty SSS",
+      "date": "2025-12-02",
+      "time": "14:30",
+      "capacity": 5,
+      "createdAt": 1764704746706,
+      "status": "active"
     }
   ],
   "bookings": [
@@ -55,6 +66,27 @@
       "studentId": "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
       "studentName": "troy",
       "createdAt": 1764684558686
+    },
+    {
+      "id": "0aa1f10d-13fd-468e-af30-35f21ecd8ec1",
+      "sessionId": "973605d7-e11f-47a6-981c-6235257e2d44",
+      "studentId": "1e99e7c2-c013-4630-8263-31357df6dada",
+      "studentName": "Grace Kennedy",
+      "createdAt": 1764704897814
+    },
+    {
+      "id": "7b058ca3-0c75-4ad4-b4ae-7b9c9d10da98",
+      "sessionId": "973605d7-e11f-47a6-981c-6235257e2d44",
+      "studentId": "student-1",
+      "studentName": "Student John",
+      "createdAt": 1764712182587
+    },
+    {
+      "id": "3daa0dea-8a8c-4e2f-b5ea-1bc5ed5235ab",
+      "sessionId": "560db781-7faa-4d4d-a0a2-d3b84810820c",
+      "studentId": "1e99e7c2-c013-4630-8263-31357df6dada",
+      "studentName": "Grace Kennedy",
+      "createdAt": 1764712225445
     }
   ]
 }
