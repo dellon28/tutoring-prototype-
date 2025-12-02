@@ -1,275 +1,1003 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Tutoring Scheduler Prototype</title>
-    <style>
-        /* CSS for Usability and Responsiveness (cite: 745, 753) */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
-        header { background-color: #004d99; color: white; padding: 20px; text-align: center; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-        .dashboard { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: #004d99; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-top: 0; }
-        .role-selector button { padding: 10px 15px; margin-right: 10px; cursor: pointer; background-color: #e0e0e0; border: none; border-radius: 4px; transition: background-color 0.3s; }
-        .role-selector button.active { background-color: #007bff; color: white; }
-        /* Forms */
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .form-group button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
-        .form-group button:hover { background-color: #218838; }
-        /* Schedule Viewer (cite: 919) */
-        .schedule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
-        .session-card { border: 1px solid #ddd; padding: 15px; border-radius: 6px; background-color: #f9f9f9; }
-        .session-card h4 { margin-top: 0; color: #007bff; }
-        .session-card button { display: block; width: 100%; margin-top: 10px; padding: 8px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        /* Admin Dashboard Specifics */
-        .admin-controls button { background-color: #dc3545; margin-right: 10px; }
-        .admin-controls button:hover { background-color: #c82333; }
-        /* Mobile Responsiveness (cite: 586) */
-        @media (max-width: 600px) {
-            header { padding: 15px; }
-            .container { margin: 10px; padding: 0; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics Tutoring Scheduler Prototype</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
+    header { background-color: #004d99; color: white; padding: 20px; text-align: center; }
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+    .dashboard { background-color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h2 { color: #004d99; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-top: 0; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+
+    .btn { border: none; border-radius: 4px; cursor: pointer; padding: 10px 14px; }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-primary:hover { background: #0b5ed7; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover { background: #218838; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-danger:hover { background: #c82333; }
+    .btn-muted { background: #6c757d; color: white; }
+    .btn-muted:hover { background: #5c636a; }
+
+    .schedule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
+    .session-card { border: 1px solid #ddd; padding: 15px; border-radius: 6px; background-color: #f9f9f9; }
+    .session-card h4 { margin-top: 0; color: #007bff; }
+
+    /* ✅ IMPORTANT: allow buttons to keep their class colors (red CANCEL etc.) */
+    .session-card .btn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+    }
+
+    /* Chat UI */
+    .chat-messages {
+      height: 260px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .chat-msg {
+      max-width: 78%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      margin: 8px 0;
+      word-wrap: break-word;
+    }
+    .chat-msg.mine { margin-left: auto; background: #e9f2ff; border-color: #cfe2ff; }
+    .chat-meta { font-size: 12px; opacity: 0.75; margin-bottom: 4px; }
+    .chat-form { display: flex; gap: 10px; margin-top: 10px; }
+    .chat-form input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+
+    .pill { display:inline-block; padding: 4px 10px; border-radius: 999px; background:#e9ecef; font-size: 13px; }
+    .topbar { display:flex; justify-content: space-between; align-items:center; gap: 12px; flex-wrap: wrap; }
+    .muted { opacity: 0.8; }
+    .error { color: #b00020; font-weight: 600; }
+    .ok { color: #1a7f37; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-top: 1px solid #ddd; text-align: left; }
+    thead tr { background: #e9ecef; }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Physics Department Tutoring Scheduling System</h1>
-    </header>
-    <div class="container">
-        <div class="role-selector">
-            <h3>Select User Role (Mock Authentication)</h3>
-            <button id="role-student">Student</button>
-            <button id="role-tutor">Tutor</button>
-            <button id="role-admin">Admin</button>
-        </div>
+<header>
+  <h1>Physics Department Tutoring Scheduling System</h1>
+</header>
 
-        <hr>
+<div class="container">
 
-        <div id="app-content">
-            <p>Please select a user role to begin the prototype demonstration.</p>
+  <!-- AUTH PANEL -->
+  <div id="auth-panel" class="dashboard">
+    <h2>🔐 Login / Sign Up</h2>
+    <p class="muted">Demo accounts (preloaded):
+      <span class="pill">Admin Doe / admin123</span>
+      <span class="pill">Dr. Smith / tutor123</span>
+      <span class="pill">Student John / student123</span>
+    </p>
+
+    <div class="form-row">
+      <div>
+        <h3>Login</h3>
+        <div class="form-group">
+          <label for="login-name">Name</label>
+          <input id="login-name" type="text" placeholder="e.g., Student John" />
         </div>
+        <div class="form-group">
+          <label for="login-pass">Password</label>
+          <input id="login-pass" type="password" placeholder="password" />
+        </div>
+        <button class="btn btn-primary" onclick="login()">Login</button>
+        <div id="login-msg" style="margin-top:10px;"></div>
+      </div>
+
+      <div>
+        <h3>Sign Up (Student / Tutor)</h3>
+        <div class="form-group">
+          <label for="signup-name">Name</label>
+          <input id="signup-name" type="text" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label for="signup-pass">Password</label>
+          <input id="signup-pass" type="password" placeholder="Create a password" />
+        </div>
+        <div class="form-group">
+          <label for="signup-role">Role</label>
+          <select id="signup-role">
+            <option value="Student">Student</option>
+            <option value="Tutor">Tutor</option>
+          </select>
+        </div>
+        <button class="btn btn-success" onclick="signup()">Submit Signup Request</button>
+        <div id="signup-msg" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div id="app-shell" style="display:none;">
+    <div class="dashboard">
+      <div class="topbar">
+        <div>
+          <div><b>Logged in as:</b> <span id="whoami"></span></div>
+          <div class="muted">Chat + Admin Approval + Scheduling demo</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="btn-schedule" class="btn btn-primary" style="display:none;" onclick="goSchedule()">Schedule</button>
+          <button id="btn-back" class="btn btn-muted" style="display:none;" onclick="goHome()">Back</button>
+          <button class="btn btn-muted" onclick="logout()">Logout</button>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Mock data structures (Data Repository simulation - cite: 893)
-        let currentUser = { role: null, id: 101, name: "Prototype User" };
+    <div id="app-content"></div>
 
-        let mockSessions = [
-            { id: 1, tutor: "Dr. Smith", date: "2025-12-05", time: "10:00", capacity: 5, bookings: 2, topic: "Quantum Mechanics" },
-            { id: 2, tutor: "Tutor Jones", date: "2025-12-05", time: "14:00", capacity: 1, bookings: 1, topic: "Classical Physics" },
-            { id: 3, tutor: "Dr. Smith", date: "2025-12-06", time: "09:00", capacity: 10, bookings: 0, topic: "Thermodynamics" },
-        ];
-        
-        let mockPendingUsers = [
-            { id: 201, name: "New Tutor Alex", role: "Tutor", status: "Pending" },
-            { id: 301, name: "New Student Ben", role: "Student", status: "Pending" },
-        ];
+    <!-- CHAT -->
+    <div id="chat-root" class="dashboard" style="display:none;">
+      <h2>💬 Chat (Student ↔ Tutor)</h2>
+      <div class="form-group">
+        <label for="chat-partner">Chat with:</label>
+        <select id="chat-partner"></select>
+      </div>
 
-        // --- Core Application Logic (Simulated API Interaction - cite: 869) ---
+      <div id="chat-status" class="muted" style="margin-bottom:10px;"></div>
+      <div id="chat-messages" class="chat-messages"></div>
 
-        /** Simulates the Notification System sending a confirmation (cite: 664) */
-        function triggerNotification(message) {
-            alert(`[Notification System] ${message}`); // Simple alert for prototype
-            console.log(`[Notification Log] ${new Date().toLocaleTimeString()}: ${message}`);
+      <form id="chat-form" class="chat-form" autocomplete="off">
+        <input id="chat-input" type="text" placeholder="Type a message..." maxlength="500" />
+        <button class="btn btn-primary" type="submit">Send</button>
+        <button class="btn btn-muted" type="button" onclick="clearCurrentChat()">Clear Chat</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // -------------------------
+  // State
+  // -------------------------
+  let currentUser = { id: null, name: null, role: null, status: null };
+  let authToken = localStorage.getItem("AUTH_TOKEN") || null;
+
+  let currentPage = "home"; // home | schedule
+
+  // Single socket (used for chat + db:changed)
+  let socket = null;
+  let currentRoomId = null;
+
+  let chatEnableInFlight = false;
+  let createInFlight = false;
+  let cancelInFlight = false;
+
+  // cache for tutor schedule view
+  let tutorScheduleCache = { sessions: [] };
+  let tutorSelectedSessionId = "";
+
+  // ✅ request sequencing (fixes races)
+  let chatPartnersSeq = 0;
+  let studentSessionsSeq = 0;
+  let tutorSessionsSeq = 0;
+
+  // -------------------------
+  // Small helpers
+  // -------------------------
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function newIdempotencyKey() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return Math.random().toString(16).slice(2) + "-" + Date.now();
+  }
+
+  function dedupeById(items) {
+    const seen = new Set();
+    const out = [];
+    for (const it of items || []) {
+      if (!it?.id) continue;
+      if (seen.has(it.id)) continue;
+      seen.add(it.id);
+      out.push(it);
+    }
+    return out;
+  }
+
+  // -------------------------
+  // API helper
+  // -------------------------
+  async function api(path, { method="GET", body=null, idempotencyKey=null } = {}) {
+    const headers = { "Content-Type": "application/json" };
+    if (authToken) headers["Authorization"] = "Bearer " + authToken;
+    if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
+
+    const res = await fetch(path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data?.message || `Request failed (${res.status})`;
+      const err = new Error(msg);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  }
+
+  function setMsg(elId, text, kind) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = text ? `<div class="${kind === "ok" ? "ok" : kind === "err" ? "error" : ""}">${text}</div>` : "";
+  }
+
+  function triggerNotification(message) {
+    alert(`[Notification System] ${message}`);
+    console.log(`[Notification Log] ${new Date().toLocaleTimeString()}: ${message}`);
+  }
+
+  function updateNavButtons() {
+    const scheduleBtn = document.getElementById("btn-schedule");
+    const backBtn = document.getElementById("btn-back");
+    const canSchedule = (currentUser.role === "Student" || currentUser.role === "Tutor");
+
+    if (!canSchedule) {
+      scheduleBtn.style.display = "none";
+      backBtn.style.display = "none";
+      return;
+    }
+
+    if (currentPage === "home") {
+      scheduleBtn.style.display = "inline-block";
+      backBtn.style.display = "none";
+    } else {
+      scheduleBtn.style.display = "none";
+      backBtn.style.display = "inline-block";
+    }
+  }
+
+  function showApp() {
+    document.getElementById("auth-panel").style.display = "none";
+    document.getElementById("app-shell").style.display = "block";
+    document.getElementById("whoami").textContent = `${currentUser.name} (${currentUser.role})`;
+
+    updateNavButtons();
+    ensureSocket();
+    renderPage();
+  }
+
+  function showAuth() {
+    document.getElementById("auth-panel").style.display = "block";
+    document.getElementById("app-shell").style.display = "none";
+
+    disconnectSocket();
+
+    currentRoomId = null;
+    currentUser = { id:null, name:null, role:null, status:null };
+    currentPage = "home";
+  }
+
+  // -------------------------
+  // Auth actions
+  // -------------------------
+  async function login() {
+    setMsg("login-msg", "", "ok");
+    const name = document.getElementById("login-name").value.trim();
+    const password = document.getElementById("login-pass").value;
+
+    try {
+      const data = await api("/api/auth/login", {
+        method: "POST",
+        body: { name, password },
+        idempotencyKey: newIdempotencyKey()
+      });
+
+      authToken = data.token;
+      localStorage.setItem("AUTH_TOKEN", authToken);
+      currentUser = data.user;
+
+      showApp();
+      setMsg("login-msg", "Login success ✅", "ok");
+    } catch (e) {
+      if (e?.data?.status === "pending") {
+        setMsg("login-msg", "Your account is pending approval. Ask the admin to approve you.", "err");
+      } else {
+        setMsg("login-msg", e.message, "err");
+      }
+    }
+  }
+
+  async function signup() {
+    setMsg("signup-msg", "", "ok");
+    const name = document.getElementById("signup-name").value.trim();
+    const password = document.getElementById("signup-pass").value;
+    const role = document.getElementById("signup-role").value;
+
+    try {
+      const data = await api("/api/auth/signup", {
+        method: "POST",
+        body: { name, password, role },
+        idempotencyKey: newIdempotencyKey()
+      });
+
+      setMsg("signup-msg", `${data.message} ✅ (Now login will work only after admin approves.)`, "ok");
+    } catch (e) {
+      setMsg("signup-msg", e.message, "err");
+    }
+  }
+
+  async function logout() {
+    try { await api("/api/auth/logout", { method: "POST", idempotencyKey: newIdempotencyKey() }); } catch {}
+    authToken = null;
+    localStorage.removeItem("AUTH_TOKEN");
+    showAuth();
+  }
+
+  async function tryAutoLogin() {
+    if (!authToken) return;
+    try {
+      const data = await api("/api/me");
+      currentUser = data.user;
+      showApp();
+    } catch {
+      authToken = null;
+      localStorage.removeItem("AUTH_TOKEN");
+      showAuth();
+    }
+  }
+
+  // -------------------------
+  // Navigation
+  // -------------------------
+  function goSchedule() {
+    currentPage = "schedule";
+    updateNavButtons();
+    renderPage();
+  }
+
+  function goHome() {
+    currentPage = "home";
+    updateNavButtons();
+    renderPage();
+  }
+
+  // -------------------------
+  // Rendering
+  // -------------------------
+  async function renderPage() {
+    updateNavButtons();
+
+    if (currentUser.role === "Admin") {
+      await renderAdminView();
+      disableChat();
+      return;
+    }
+
+    if (currentPage === "schedule") {
+      await renderScheduleView();
+    } else {
+      await renderHomeView();
+    }
+
+    enableChatIfAllowed();
+  }
+
+  async function renderHomeView() {
+    if (currentUser.role === "Student") return renderStudentHome();
+    if (currentUser.role === "Tutor") return renderTutorHome();
+    document.getElementById("app-content").innerHTML = `<div class="dashboard"><p>Unknown role.</p></div>`;
+  }
+
+  async function renderStudentHome() {
+    const seq = ++studentSessionsSeq;
+
+    const host = document.getElementById("app-content");
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📚 Student Schedule Viewer</h2>
+        <p>Welcome back, ${escapeHtml(currentUser.name)}! View and book available tutoring sessions below.</p>
+        <div class="muted" id="sessions-loading">Loading sessions...</div>
+        <div class="schedule-grid" id="session-grid"></div>
+      </div>
+    `;
+
+    let sessions = [];
+    try {
+      const data = await api("/api/sessions");
+      if (seq !== studentSessionsSeq) return;
+      sessions = dedupeById(data.sessions || []);
+    } catch (e) {
+      if (seq !== studentSessionsSeq) return;
+      host.innerHTML = `<div class="dashboard"><div class="error">Failed to load sessions: ${escapeHtml(e.message)}</div></div>`;
+      return;
+    }
+
+    const grid = document.getElementById("session-grid");
+    if (!grid) return;
+
+    if (!sessions.length) {
+      grid.innerHTML = `<div class="muted">No sessions yet.</div>`;
+      return;
+    }
+
+    grid.innerHTML = sessions.map(s => {
+      const full = s.bookings >= s.capacity;
+      let btn = "";
+
+      if (s.bookedByMe) {
+        btn = `<button class="btn btn-muted" disabled>BOOKED</button>`;
+      } else if (full) {
+        btn = `<button class="btn btn-danger" disabled>FULL</button>`;
+      } else {
+        btn = `<button class="btn btn-primary" onclick="bookSession('${s.id}')">Book Session</button>`;
+      }
+
+      return `
+        <div class="session-card">
+          <h4>${escapeHtml(s.topic)} with ${escapeHtml(s.tutorName)}</h4>
+          <p><strong>Date:</strong> ${escapeHtml(s.date)}<br>
+             <strong>Time:</strong> ${escapeHtml(s.time)}<br>
+             <strong>Slots:</strong> ${s.bookings}/${s.capacity}</p>
+          ${btn}
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function renderTutorHome() {
+    const seq = ++tutorSessionsSeq;
+
+    const host = document.getElementById("app-content");
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📝 Tutor Session Management</h2>
+        <p>Welcome, ${escapeHtml(currentUser.name)}! Create a new session or view your current sessions.</p>
+
+        <h3>Create New Session</h3>
+        <form id="create-session-form" class="form-group" onsubmit="handleCreateSession(event)">
+          <label for="topic">Topic:</label>
+          <input type="text" id="topic" value="Physics 101 Review" required>
+
+          <label for="date">Date:</label>
+          <input type="date" id="date" value="2025-12-10" required>
+
+          <label for="time">Time:</label>
+          <input type="time" id="time" value="11:00" required>
+
+          <label for="capacity">Capacity:</label>
+          <input type="number" id="capacity" value="5" min="1" required>
+
+          <button id="create-btn" class="btn btn-success" type="submit">Create Session</button>
+        </form>
+
+        <h3>My Current Sessions</h3>
+        <div class="muted" id="tutor-loading">Loading sessions...</div>
+        <div class="schedule-grid" id="tutor-sessions"></div>
+      </div>
+    `;
+
+    let sessions = [];
+    try {
+      const data = await api("/api/sessions");
+      if (seq !== tutorSessionsSeq) return;
+      sessions = dedupeById((data.sessions || []).filter(s => s.tutorId === currentUser.id));
+    } catch (e) {
+      if (seq !== tutorSessionsSeq) return;
+      host.innerHTML = `<div class="dashboard"><div class="error">Failed to load sessions: ${escapeHtml(e.message)}</div></div>`;
+      return;
+    }
+
+    const grid = document.getElementById("tutor-sessions");
+    if (!grid) return;
+
+    if (!sessions.length) {
+      grid.innerHTML = `<div class="muted">You haven't created any sessions yet.</div>`;
+      return;
+    }
+
+    grid.innerHTML = sessions.map(s => `
+      <div class="session-card">
+        <h4>${escapeHtml(s.topic)}</h4>
+        <p><strong>Date/Time:</strong> ${escapeHtml(s.date)} at ${escapeHtml(s.time)}<br>
+           <strong>Bookings:</strong> ${s.bookings}/${s.capacity}</p>
+        <button class="btn btn-danger" onclick="cancelSession('${s.id}')">CANCEL</button>
+      </div>
+    `).join("");
+  }
+
+  async function renderScheduleView() {
+    if (currentUser.role === "Student") return renderStudentSchedule();
+    if (currentUser.role === "Tutor") return renderTutorSchedule();
+  }
+
+  async function renderStudentSchedule() {
+    const host = document.getElementById("app-content");
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📅 My Schedule</h2>
+        <div class="muted">Loading your booked sessions...</div>
+      </div>
+    `;
+
+    let items = [];
+    try {
+      const data = await api("/api/schedule/student");
+      items = data.sessions || [];
+    } catch (e) {
+      host.innerHTML = `<div class="dashboard"><div class="error">Failed to load schedule: ${escapeHtml(e.message)}</div></div>`;
+      return;
+    }
+
+    const rows = items.length
+      ? items.map(s => `
+          <tr>
+            <td>${escapeHtml(s.topic)}</td>
+            <td>${escapeHtml(s.tutorName)}</td>
+            <td>${escapeHtml(s.date)}</td>
+            <td>${escapeHtml(s.time)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="4" style="text-align:center;">No bookings yet. Book a session first.</td></tr>`;
+
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📅 My Schedule</h2>
+        <p>These are the sessions you have booked.</p>
+        <table>
+          <thead><tr><th>Topic</th><th>Tutor</th><th>Date</th><th>Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function renderTutorSchedule() {
+    const host = document.getElementById("app-content");
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📅 Schedule (Tutor)</h2>
+        <div class="muted">Loading your sessions + booked students...</div>
+      </div>
+    `;
+
+    try {
+      const data = await api("/api/schedule/tutor");
+      tutorScheduleCache.sessions = dedupeById(data.sessions || []);
+    } catch (e) {
+      host.innerHTML = `<div class="dashboard"><div class="error">Failed to load schedule: ${escapeHtml(e.message)}</div></div>`;
+      return;
+    }
+
+    const sessions = tutorScheduleCache.sessions;
+    if (!sessions.length) {
+      host.innerHTML = `
+        <div class="dashboard">
+          <h2>📅 Schedule (Tutor)</h2>
+          <div class="muted">You have no sessions yet. Create one first.</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (!tutorSelectedSessionId || !sessions.some(s => s.id === tutorSelectedSessionId)) {
+      tutorSelectedSessionId = sessions[0].id;
+    }
+
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>📅 Schedule (Tutor)</h2>
+        <p>Select one of your sessions to see booked students.</p>
+
+        <div class="form-group">
+          <label for="tutor-session-select">Session:</label>
+          <select id="tutor-session-select" onchange="onTutorSessionChange()">
+            ${sessions.map(s => `
+              <option value="${s.id}" ${s.id === tutorSelectedSessionId ? "selected" : ""}>
+                ${escapeHtml(s.topic)} • ${escapeHtml(s.date)} ${escapeHtml(s.time)} (${s.bookings}/${s.capacity})
+              </option>
+            `).join("")}
+          </select>
+        </div>
+
+        <div id="tutor-students-panel"></div>
+      </div>
+    `;
+
+    renderTutorStudentsPanel();
+  }
+
+  function onTutorSessionChange() {
+    const sel = document.getElementById("tutor-session-select");
+    tutorSelectedSessionId = sel.value;
+    renderTutorStudentsPanel();
+  }
+
+  function renderTutorStudentsPanel() {
+    const panel = document.getElementById("tutor-students-panel");
+    const s = tutorScheduleCache.sessions.find(x => x.id === tutorSelectedSessionId);
+    if (!s) {
+      panel.innerHTML = `<div class="error">Session not found.</div>`;
+      return;
+    }
+
+    const rows = (s.students || []).length
+      ? s.students.map(st => `<tr><td>${escapeHtml(st.studentName)}</td><td>${escapeHtml(st.studentId)}</td></tr>`).join("")
+      : `<tr><td colspan="2" style="text-align:center;">No students booked yet.</td></tr>`;
+
+    panel.innerHTML = `
+      <h3>Booked Students</h3>
+      <table>
+        <thead><tr><th>Student Name</th><th>Student ID</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  async function renderAdminView() {
+    const host = document.getElementById('app-content');
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>⚙️ Admin Control Panel</h2>
+        <div class="muted">Loading pending users...</div>
+      </div>
+    `;
+
+    let pending = [];
+    try {
+      const data = await api("/api/admin/pending");
+      pending = data.pending || [];
+    } catch (e) {
+      host.innerHTML = `
+        <div class="dashboard">
+          <h2>⚙️ Admin Control Panel</h2>
+          <div class="error">Could not load pending users: ${escapeHtml(e.message)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const rows = pending.length
+      ? pending.map(u => `
+        <tr>
+          <td>${escapeHtml(u.id)}</td>
+          <td>${escapeHtml(u.name)}</td>
+          <td>${escapeHtml(u.role)}</td>
+          <td>
+            <button class="btn btn-success" onclick="approveUser('${u.id}')">Approve</button>
+            <button class="btn btn-danger" onclick="denyUser('${u.id}')">Deny</button>
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4" style="text-align:center;">No pending requests.</td></tr>`;
+
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>⚙️ Admin Control Panel</h2>
+        <p>Approve/deny pending Student/Tutor signup requests.</p>
+
+        <h3>Pending Registrations</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Action</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function approveUser(id) {
+    try {
+      await api(`/api/admin/users/${id}/approve`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification("User approved!");
+      renderPage();
+    } catch (e) {
+      alert("Approve failed: " + e.message);
+    }
+  }
+
+  async function denyUser(id) {
+    try {
+      await api(`/api/admin/users/${id}/deny`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification("User denied/removed.");
+      renderPage();
+    } catch (e) {
+      alert("Deny failed: " + e.message);
+    }
+  }
+
+  // -------------------------
+  // Actions: create + book + cancel
+  // -------------------------
+  async function handleCreateSession(e) {
+    e.preventDefault();
+    if (createInFlight) return;
+    createInFlight = true;
+
+    const btn = document.getElementById("create-btn");
+    if (btn) btn.disabled = true;
+
+    try {
+      const topic = document.getElementById('topic').value.trim();
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const capacity = document.getElementById('capacity').value;
+
+      const data = await api("/api/sessions", {
+        method: "POST",
+        body: { topic, date, time, capacity },
+        idempotencyKey: newIdempotencyKey()
+      });
+
+      triggerNotification(`Session created: ${data.session.topic} on ${data.session.date} at ${data.session.time}`);
+      await renderPage();
+    } catch (err) {
+      alert("Create failed: " + err.message);
+    } finally {
+      createInFlight = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function bookSession(sessionId) {
+    try {
+      const data = await api(`/api/sessions/${sessionId}/book`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification(`Session booked! You are confirmed for ${data.session.tutorName} on ${data.session.date} at ${data.session.time}.`);
+      await renderPage();
+    } catch (err) {
+      alert("Booking failed: " + err.message);
+    }
+  }
+
+  async function cancelSession(sessionId) {
+    if (cancelInFlight) return;
+    if (!confirm("Cancel this session?\n\nThis will remove it for ALL students who booked it.")) return;
+
+    cancelInFlight = true;
+    try {
+      const data = await api(`/api/sessions/${sessionId}/cancel`, {
+        method: "POST",
+        idempotencyKey: newIdempotencyKey()
+      });
+
+      triggerNotification(`Session cancelled. Removed ${data.removedBookings} booking(s).`);
+      await renderPage();
+    } catch (err) {
+      alert("Cancel failed: " + err.message);
+    } finally {
+      cancelInFlight = false;
+    }
+  }
+
+  // -------------------------
+  // Socket + Chat
+  // -------------------------
+  function ensureSocket() {
+    if (!authToken) return;
+    if (socket) return;
+
+    socket = io({ auth: { token: authToken } });
+
+    socket.on("connect_error", (err) => {
+      console.warn("socket error:", err?.message || err);
+    });
+
+    socket.on("db:changed", ({ reason } = {}) => {
+      if (currentUser.role === "Admin") {
+        renderAdminView();
+        return;
+      }
+
+      // ✅ session cancel affects sessions, schedules, and chat partners
+      if (reason === "session_cancelled") {
+        renderPage();
+        return;
+      }
+
+      if ((currentUser.role === "Student" || currentUser.role === "Tutor") &&
+          (reason === "booking_created" || reason === "user_approved" || reason === "signup_submitted")) {
+        loadChatPartners().catch(() => {});
+      }
+    });
+
+    socket.on("chat:history", ({ roomId, history }) => {
+      const wrap = document.getElementById("chat-messages");
+      wrap.innerHTML = "";
+      (history || []).forEach(renderChatMessage);
+      currentRoomId = roomId;
+    });
+
+    socket.on("chat:message", (msg) => renderChatMessage(msg));
+  }
+
+  function disconnectSocket() {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+  }
+
+  function disableChat() {
+    const chatRoot = document.getElementById("chat-root");
+    chatRoot.style.display = "none";
+    currentRoomId = null;
+  }
+
+  function setChatStatus(text) {
+    const el = document.getElementById("chat-status");
+    if (el) el.textContent = text || "";
+  }
+
+  function renderChatMessage(msg) {
+    const wrap = document.getElementById("chat-messages");
+    if (!wrap) return;
+
+    const div = document.createElement("div");
+    div.className = "chat-msg" + (msg.senderId === currentUser.id ? " mine" : "");
+
+    const meta = document.createElement("div");
+    meta.className = "chat-meta";
+    const when = new Date(msg.ts).toLocaleString();
+    meta.textContent = `${msg.senderName} (${msg.senderRole}) • ${when}`;
+
+    const body = document.createElement("div");
+    body.textContent = msg.text;
+
+    div.appendChild(meta);
+    div.appendChild(body);
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  async function loadChatPartners() {
+    const seq = ++chatPartnersSeq;
+    const select = document.getElementById("chat-partner");
+    const prev = select.value;
+
+    select.disabled = true;
+    select.innerHTML = `<option value="">Loading...</option>`;
+    setChatStatus("Loading chat partners...");
+
+    let data;
+    try {
+      data = await api("/api/chat/partners");
+    } catch (e) {
+      if (seq !== chatPartnersSeq) return;
+      select.innerHTML = `<option value="">(failed to load partners)</option>`;
+      setChatStatus("Failed to load partners: " + e.message);
+      return;
+    }
+
+    if (seq !== chatPartnersSeq) return;
+
+    let users = dedupeById(data.users || []);
+
+    if (!users.length) {
+      select.innerHTML = `<option value="">No chat partners yet (book a session first)</option>`;
+      select.disabled = true;
+      setChatStatus("No partners yet. Book a session to unlock chat.");
+      currentRoomId = null;
+      document.getElementById("chat-messages").innerHTML = "";
+      return;
+    }
+
+    select.disabled = false;
+    select.innerHTML = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (${escapeHtml(u.role)})</option>`).join("");
+
+    if (prev && [...select.options].some(o => o.value === prev)) {
+      select.value = prev;
+    }
+
+    setChatStatus("Connected ✅");
+  }
+
+  async function joinSelectedPartner() {
+    const select = document.getElementById("chat-partner");
+    const otherUserId = select.value;
+    if (!otherUserId || !socket) return;
+
+    setChatStatus("Joining chat...");
+    currentRoomId = null;
+
+    socket.emit("chat:join", { otherUserId }, (ack) => {
+      if (!ack?.ok) {
+        if (ack?.error === "not_booked") {
+          setChatStatus("Chat locked: you must book a session with this tutor/student first.");
+        } else {
+          setChatStatus(`Join failed: ${ack?.error || "unknown"}`);
         }
+        return;
+      }
+      currentRoomId = ack.roomId;
+      setChatStatus("Connected ✅");
+    });
+  }
 
-        /** Simulates the Scheduling & Booking Logic (cite: 872) */
-        function bookSession(sessionId) {
-            const session = mockSessions.find(s => s.id === sessionId);
-            if (!session) return alert("Error: Session not found.");
-            if (session.bookings >= session.capacity) return alert("Error: Session is fully booked.");
+  async function enableChatIfAllowed() {
+    if (chatEnableInFlight) return;
+    chatEnableInFlight = true;
 
-            session.bookings++;
-            triggerNotification(`Session booked! You are confirmed for ${session.tutor} on ${session.date} at ${session.time}.`);
-            console.log(`[Booking Logic] Student ${currentUser.id} booked session ${sessionId}. Current bookings: ${session.bookings}`);
-            renderAppContent(currentUser.role);
-        }
+    try {
+      const chatRoot = document.getElementById("chat-root");
+      const allowed = (currentUser.role === "Student" || currentUser.role === "Tutor");
+      if (!allowed || !authToken) {
+        disableChat();
+        return;
+      }
 
-        /** Simulates Tutor Session Creation Logic (cite: 635) */
-        function createSession(tutor, date, time, topic, capacity) {
-            const newId = mockSessions.length + 1;
-            mockSessions.push({ id: newId, tutor, date, time, topic, capacity: parseInt(capacity), bookings: 0 });
-            triggerNotification(`Session created! ID ${newId} with ${tutor} on ${date} at ${time}.`);
-            console.log(`[Scheduling Logic] New session created by Tutor ${currentUser.id}.`);
-            renderAppContent(currentUser.role);
-        }
+      chatRoot.style.display = "block";
+      ensureSocket();
 
-        /** Simulates Admin Approval/Removal Logic (cite: 682, 683, 710) */
-        function processUserRequest(userId, action) {
-            const index = mockPendingUsers.findIndex(u => u.id === userId);
-            if (index === -1) {
-                alert("Error: User not found in pending list.");
-                return;
-            }
+      await loadChatPartners();
+      await joinSelectedPartner();
+    } finally {
+      chatEnableInFlight = false;
+    }
+  }
 
-            const user = mockPendingUsers.splice(index, 1)[0];
-            
-            if (action === 'approve') {
-                alert(`SUCCESS: Approved ${user.role} ${user.name}. User now active.`);
-                // In a real system, this would move the user to the active User Repository (cite: 886)
-                triggerNotification(`Welcome, ${user.name}! Your ${user.role} account is now active.`);
-            } else if (action === 'remove') {
-                alert(`SUCCESS: Removed user ${user.name}.`);
-                // In a real system, this would log the deletion (cite: 888) and soft-delete the user.
-            }
-            console.log(`[Admin Logic] ${user.role} ${user.name} was ${action}d by Admin ${currentUser.id}.`);
-            renderAppContent(currentUser.role);
-        }
+  function clearCurrentChat() {
+    if (!socket || !currentRoomId) return;
+    if (!confirm("Clear the chat history for this conversation?")) return;
 
-        // --- Presentation Layer (UI Rendering - cite: 853) ---
+    socket.emit("chat:clear", { roomId: currentRoomId }, (ack) => {
+      if (!ack?.ok) {
+        alert("Clear chat failed: " + (ack?.error || "unknown"));
+        return;
+      }
+      // server will emit chat:history (empty), but clear instantly too
+      document.getElementById("chat-messages").innerHTML = "";
+    });
+  }
 
-        function renderStudentView() {
-            const content = `
-                <div class="dashboard">
-                    <h2>📚 Student Schedule Viewer</h2>
-                    <p>Welcome back, ${currentUser.name}! View and book available tutoring sessions below.</p>
-                    <div class="schedule-grid" id="session-list">
-                        </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = content;
-            
-            const list = document.getElementById('session-list');
-            mockSessions.forEach(session => {
-                const isBooked = session.bookings > 0 && currentUser.id === session.id; // Mock simple check
-                const card = document.createElement('div');
-                card.className = 'session-card';
-                card.innerHTML = `
-                    <h4>${session.topic} with ${session.tutor}</h4>
-                    <p><strong>Date:</strong> ${session.date}<br>
-                       <strong>Time:</strong> ${session.time}<br>
-                       <strong>Slots:</strong> ${session.bookings}/${session.capacity}</p>
-                    ${isBooked 
-                        ? '<button style="background-color: #6c757d;" disabled>BOOKED</button>' 
-                        : (session.bookings < session.capacity 
-                            ? `<button onclick="bookSession(${session.id})">Book Session</button>` 
-                            : '<button style="background-color: #dc3545;" disabled>FULL</button>')
-                    }
-                `;
-                list.appendChild(card);
-            });
-        }
+  // Wire chat form ONCE
+  (function wireChatFormOnce() {
+    const form = document.getElementById("chat-form");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!socket || !currentRoomId) return;
 
-        function renderTutorView() {
-            const sessionList = mockSessions.filter(s => s.tutor.includes(currentUser.name.split(' ')[1] || 'Smith')); // Simple mock filtering
-            const content = `
-                <div class="dashboard">
-                    <h2>📝 Tutor Session Management</h2>
-                    <p>Welcome, ${currentUser.name}! Create a new session or view your current schedule.</p>
-                    
-                    <h3>Create New Session (cite: 635)</h3>
-                    <div class="form-group">
-                        <label for="topic">Topic:</label><input type="text" id="topic" value="Physics 101 Review" required>
-                        <label for="date">Date:</label><input type="date" id="date" value="2025-12-10" required>
-                        <label for="time">Time:</label><input type="time" id="time" value="11:00" required>
-                        <label for="capacity">Capacity:</label><input type="number" id="capacity" value="5" min="1" required>
-                        <button onclick="handleCreateSession()">Create Session</button>
-                    </div>
+      const input = document.getElementById("chat-input");
+      const text = (input.value || "").trim();
+      if (!text) return;
 
-                    <h3>My Current Schedule (cite: 637)</h3>
-                    <div class="schedule-grid">
-                        ${sessionList.map(s => `
-                            <div class="session-card">
-                                <h4>${s.topic}</h4>
-                                <p><strong>Date/Time:</strong> ${s.date} at ${s.time}<br>
-                                   <strong>Bookings:</strong> ${s.bookings}/${s.capacity}</p>
-                                <button style="background-color: #ffc107; color: #333;" disabled>Edit/Cancel (Prototype)</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = content;
-        }
+      socket.emit("chat:send", { roomId: currentRoomId, text }, (ack) => {
+        if (!ack?.ok) console.warn("chat send failed", ack);
+      });
 
-        function handleCreateSession() {
-            const topic = document.getElementById('topic').value;
-            const date = document.getElementById('date').value;
-            const time = document.getElementById('time').value;
-            const capacity = document.getElementById('capacity').value;
-            createSession(currentUser.name, date, time, topic, capacity);
-        }
+      input.value = "";
+      input.focus();
+    });
 
-        function renderAdminView() {
-            const content = `
-                <div class="dashboard">
-                    <h2>⚙️ Admin Control Panel (cite: 679)</h2>
-                    <p>Welcome, Administrator! Manage pending users and generate reports.</p>
-                    
-                    <h3>Pending Registrations (Admissions - cite: 682, 683)</h3>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background-color: #e9ecef;"><th>ID</th><th>Name</th><th>Role</th><th>Action</th></tr>
-                        </thead>
-                        <tbody>
-                            ${mockPendingUsers.map(user => `
-                                <tr style="border-top: 1px solid #ddd;">
-                                    <td>${user.id}</td>
-                                    <td>${user.name}</td>
-                                    <td>${user.role}</td>
-                                    <td class="admin-controls">
-                                        <button style="background-color: #28a745;" onclick="processUserRequest(${user.id}, 'approve')">Approve</button>
-                                        <button onclick="processUserRequest(${user.id}, 'remove')">Deny/Remove</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                            ${mockPendingUsers.length === 0 ? '<tr><td colspan="4" style="text-align: center;">No pending requests.</td></tr>' : ''}
-                        </tbody>
-                    </table>
+    const sel = document.getElementById("chat-partner");
+    sel.addEventListener("change", async () => {
+      document.getElementById("chat-messages").innerHTML = "";
+      await joinSelectedPartner();
+    });
+  })();
 
-                    <h3 style="margin-top: 30px;">System Actions</h3>
-                    <div class="admin-controls">
-                        <button style="background-color: #007bff;" onclick="alert('Generating report for ${mockSessions.length} sessions (cite: 681)... Check console log for details.')">Generate Session Report</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = content;
-        }
-
-        function renderAppContent(role) {
-            document.querySelectorAll('.role-selector button').forEach(btn => btn.classList.remove('active'));
-            if (role) {
-                document.getElementById(`role-${role.toLowerCase()}`).classList.add('active');
-            }
-
-            switch (role) {
-                case 'Student':
-                    renderStudentView();
-                    break;
-                case 'Tutor':
-                    currentUser.name = "Dr. Smith"; // Assign specific name for tutor view mock filter
-                    renderTutorView();
-                    break;
-                case 'Admin':
-                    currentUser.name = "Admin Doe"; // Assign specific name for admin view
-                    renderAdminView();
-                    break;
-                default:
-                    document.getElementById('app-content').innerHTML = '<p>Please select a user role to begin the prototype demonstration.</p>';
-            }
-            console.log(`[Authentication] User set to Role: ${role} | Name: ${currentUser.name}`);
-        }
-
-        // Event Listeners for Role Selection
-        document.getElementById('role-student').addEventListener('click', () => {
-            currentUser.role = 'Student';
-            currentUser.name = "Student John";
-            renderAppContent('Student');
-        });
-        document.getElementById('role-tutor').addEventListener('click', () => {
-            currentUser.role = 'Tutor';
-            currentUser.name = "Dr. Smith";
-            renderAppContent('Tutor');
-        });
-        document.getElementById('role-admin').addEventListener('click', () => {
-            currentUser.role = 'Admin';
-            currentUser.name = "Admin Doe";
-            renderAppContent('Admin');
-        });
-
-    </script>
+  // Boot
+  tryAutoLogin();
+</script>
 </body>
 </html>
+

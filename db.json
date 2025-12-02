@@ -1,0 +1,230 @@
+{
+  "users": [
+    {
+      "id": "58443d5f-882b-4f70-9854-9d08e64d0143",
+      "name": "jack",
+      "role": "Student",
+      "status": "active",
+      "password": {
+        "salt": "50abe29b145fce42f5052a012669736b",
+        "hash": "098781bfd82f202a428cb258d9c2b6fc3665f3b00b5982431c48a79e9c6f8021003bbaf4f5cc73b0d37d077b21b23a0f8f04eb3afded70b442634e8394cefaf5",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764649149721
+    },
+    {
+      "id": "admin-1",
+      "name": "Admin Doe",
+      "role": "Admin",
+      "status": "active",
+      "password": {
+        "salt": "bee25ec54f45a50791ef30bdaee8b26a",
+        "hash": "a21ce401c0d1a7f5390254deb41804d60e56af4a234f1e537e2008df0c6e222e92300e0130ab6064351c9b0fe0aca173addf43bf33b0f80038b89b39bae65641",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764649521030
+    },
+    {
+      "id": "tutor-1",
+      "name": "Dr. Smith",
+      "role": "Tutor",
+      "status": "active",
+      "password": {
+        "salt": "c65a905fdbd1cb31abc8b4c25281553c",
+        "hash": "740999330cfb8d67358618b810f365fa46f14ac907964740263b2318a927c97a488bd3c883827399e0435688e4ea9b1899c2dcfa3337d1787a102baa28124bed",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764649521064
+    },
+    {
+      "id": "student-1",
+      "name": "Student John",
+      "role": "Student",
+      "status": "active",
+      "password": {
+        "salt": "cdb3403a652ed606284d698d262bbf22",
+        "hash": "10c4678bf4ca448b47d0a317047dc6155a1ea14147be7fbff4a9f06547e16b6fcd963632f00fa611c9b9daf03bfea97582d8e5574a1c4472b91f39f6b7f87816",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764649521099
+    },
+    {
+      "id": "06747a23-6010-48f1-8a4e-3d2b0ade954b",
+      "name": "john2",
+      "role": "Tutor",
+      "status": "active",
+      "password": {
+        "salt": "c513330c4918abf04fb49547f9a81042",
+        "hash": "97ff9e7e7fc9328b7d5908ad593790a44bfab38eacdc79a33ec9c215a074815a2dbef43c971171a158a28a90c6ab2fb24e5843fe9f40cc0d814613bab05b0adf",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764649972227
+    },
+    {
+      "id": "baefd4af-9bad-4f25-af4e-1c50ba2c2a97",
+      "name": "David",
+      "role": "Student",
+      "status": "active",
+      "password": {
+        "salt": "dc819a7d174711cdaebe0627f2dfc829",
+        "hash": "1bbbcb4f200ed1758c79f812d41daab8b7a77b3bc53442409b27be4511147a5d7d63c5a643d37ae3796654cc8d0db44bb02b41204c91ac92be937150af8365bf",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764676081659
+    },
+    {
+      "id": "36705a1b-48b3-4dab-9fdd-698088f388ef",
+      "name": "professeur",
+      "role": "Tutor",
+      "status": "active",
+      "password": {
+        "salt": "8551667ab2fdb1a9ffb1168cd849e0f7",
+        "hash": "ba014fffe27f4e432771d0326c72e7a5be86fc5c3af9567e864c9c3bd48220134112a64a1314aed9055cb28fa281ba154d2fa6daaa30f7499c901242d484d448",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764680863703
+    },
+    {
+      "id": "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
+      "name": "troy",
+      "role": "Student",
+      "status": "active",
+      "password": {
+        "salt": "c3c9e2bfff29bddff0500f554949ac05",
+        "hash": "daf8098284999ef0b6fc82bcffab33bb1dcdf2e9acce829a94c714f4d0db285c058ee57a0d933e81be9d4a494bd1d9fa10ef9ca1c1c9e05e2932edb030989f04",
+        "algo": "scrypt"
+      },
+      "createdAt": 1764683287194
+    }
+  ],
+  "rooms": {
+    "dm:58443d5f-882b-4f70-9854-9d08e64d0143:tutor-1": {
+      "participants": [
+        "58443d5f-882b-4f70-9854-9d08e64d0143",
+        "tutor-1"
+      ],
+      "messages": [
+        {
+          "id": "b9810980-bd40-488f-87d1-ebe17affb8bc",
+          "roomId": "dm:58443d5f-882b-4f70-9854-9d08e64d0143:tutor-1",
+          "senderId": "58443d5f-882b-4f70-9854-9d08e64d0143",
+          "senderName": "jack",
+          "senderRole": "Student",
+          "text": "try",
+          "ts": 1764649627874
+        }
+      ]
+    },
+    "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:58443d5f-882b-4f70-9854-9d08e64d0143": {
+      "participants": [
+        "06747a23-6010-48f1-8a4e-3d2b0ade954b",
+        "58443d5f-882b-4f70-9854-9d08e64d0143"
+      ],
+      "messages": [
+        {
+          "id": "9cf3340a-1231-49dd-8a5c-e76aea80cfc2",
+          "roomId": "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:58443d5f-882b-4f70-9854-9d08e64d0143",
+          "senderId": "58443d5f-882b-4f70-9854-9d08e64d0143",
+          "senderName": "jack",
+          "senderRole": "Student",
+          "text": "yow",
+          "ts": 1764676651303
+        }
+      ]
+    },
+    "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:student-1": {
+      "participants": [
+        "student-1",
+        "06747a23-6010-48f1-8a4e-3d2b0ade954b"
+      ],
+      "messages": [
+        {
+          "id": "b068f9c7-a51a-46a8-bf78-b2bdd606d644",
+          "roomId": "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:student-1",
+          "senderId": "student-1",
+          "senderName": "Student John",
+          "senderRole": "Student",
+          "text": "you",
+          "ts": 1764684189229
+        }
+      ]
+    },
+    "dm:36705a1b-48b3-4dab-9fdd-698088f388ef:student-1": {
+      "participants": [
+        "student-1",
+        "36705a1b-48b3-4dab-9fdd-698088f388ef"
+      ],
+      "messages": [
+        {
+          "id": "fa2b0fa8-f27b-4a98-8026-0f21335c3523",
+          "roomId": "dm:36705a1b-48b3-4dab-9fdd-698088f388ef:student-1",
+          "senderId": "36705a1b-48b3-4dab-9fdd-698088f388ef",
+          "senderName": "professeur",
+          "senderRole": "Tutor",
+          "text": "I cleared chat",
+          "ts": 1764682816513
+        },
+        {
+          "id": "a3ad7487-eb25-4f6e-8f42-2c4bf4f02af0",
+          "roomId": "dm:36705a1b-48b3-4dab-9fdd-698088f388ef:student-1",
+          "senderId": "student-1",
+          "senderName": "Student John",
+          "senderRole": "Student",
+          "text": "coolbeans",
+          "ts": 1764682822912
+        }
+      ]
+    },
+    "dm:student-1:tutor-1": {
+      "participants": [
+        "student-1",
+        "tutor-1"
+      ],
+      "messages": [
+        {
+          "id": "dace87bb-bbf3-44d5-8f99-836817478ee7",
+          "roomId": "dm:student-1:tutor-1",
+          "senderId": "student-1",
+          "senderName": "Student John",
+          "senderRole": "Student",
+          "text": "seeing this",
+          "ts": 1764681217376
+        },
+        {
+          "id": "06fd80d4-9fca-4be1-93ab-1b81a055dc73",
+          "roomId": "dm:student-1:tutor-1",
+          "senderId": "tutor-1",
+          "senderName": "Dr. Smith",
+          "senderRole": "Tutor",
+          "text": "now i am",
+          "ts": 1764681249852
+        },
+        {
+          "id": "2cc8ca8f-6dd9-45c7-9824-d6442b586cc3",
+          "roomId": "dm:student-1:tutor-1",
+          "senderId": "tutor-1",
+          "senderName": "Dr. Smith",
+          "senderRole": "Tutor",
+          "text": "are you?",
+          "ts": 1764681257179
+        },
+        {
+          "id": "c595e7ac-ebe0-464b-9e1d-cc0846f8a4d2",
+          "roomId": "dm:student-1:tutor-1",
+          "senderId": "student-1",
+          "senderName": "Student John",
+          "senderRole": "Student",
+          "text": "time check",
+          "ts": 1764681273308
+        }
+      ]
+    },
+    "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:ce9e4ddd-aeeb-4723-802d-d1ca00830c94": {
+      "participants": [
+        "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
+        "06747a23-6010-48f1-8a4e-3d2b0ade954b"
+      ],
+      "messages": []
+    }
+  }
+}

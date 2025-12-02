@@ -1,0 +1,60 @@
+{
+  "sessions": [
+    {
+      "id": "560db781-7faa-4d4d-a0a2-d3b84810820c",
+      "tutorId": "tutor-1",
+      "tutorName": "Dr. Smith",
+      "topic": "Physics 101 Review",
+      "date": "2025-12-10",
+      "time": "11:00",
+      "capacity": 5,
+      "createdAt": 1764680787861,
+      "status": "active"
+    },
+    {
+      "id": "732cca19-cb84-44cd-ae3f-1e4accc0257d",
+      "tutorId": "06747a23-6010-48f1-8a4e-3d2b0ade954b",
+      "tutorName": "john2",
+      "topic": "display",
+      "date": "2025-12-10",
+      "time": "11:00",
+      "capacity": 5,
+      "createdAt": 1764683980615,
+      "status": "active"
+    },
+    {
+      "id": "39eb32ed-6ee3-42c0-b5b7-a4b5165d4e61",
+      "tutorId": "06747a23-6010-48f1-8a4e-3d2b0ade954b",
+      "tutorName": "john2",
+      "topic": "Physics",
+      "date": "2025-12-10",
+      "time": "11:00",
+      "capacity": 1,
+      "createdAt": 1764684529668,
+      "status": "active"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "1c52eb9c-41bc-4976-aca8-dd3dc55c7834",
+      "sessionId": "560db781-7faa-4d4d-a0a2-d3b84810820c",
+      "studentId": "student-1",
+      "studentName": "Student John",
+      "createdAt": 1764681205319
+    },
+    {
+      "id": "ba470f10-8e79-4074-81a4-fcbbeb9b0975",
+      "sessionId": "732cca19-cb84-44cd-ae3f-1e4accc0257d",
+      "studentId": "student-1",
+      "studentName": "Student John",
+      "createdAt": 1764684129112
+    },
+    {
+      "id": "98b3699d-2f91-41b3-a3c2-3640eb81f972",
+      "sessionId": "39eb32ed-6ee3-42c0-b5b7-a4b5165d4e61",
+      "studentId": "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
+      "studentName": "troy",
+      "createdAt": 1764684558686
+    }
+  ]
+}
