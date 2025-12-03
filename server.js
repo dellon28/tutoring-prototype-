@@ -111,12 +111,12 @@ function checkStudentClash(studentId, targetDate, targetTime) {
 function checkTutorClash(tutorId, targetDate, targetTime) {
     const db1 = readDb1(); // Reads data from db1.json (sessions.docx content)
     
-    // Find any existing active session that matches the tutorId, date, and time
+    // Find any existing session (pending or active) that matches the tutorId, date, and time
     const clash = db1.sessions.some(session => 
         session.tutorId === tutorId &&
         session.date === targetDate &&
         session.time === targetTime &&
-        session.status === 'active' // Ensure it's not a cancelled session
+        session.status !== 'cancelled'
     );
     
     return clash;
@@ -148,6 +148,7 @@ function ensureDb() {
         role: u.role,
         status: u.status,
         password: makePasswordRecord(u.pass),
+        chatBanned: false,
         createdAt: Date.now(),
       });
     }
@@ -169,6 +170,7 @@ function ensureDb() {
         role: u.role,
         status: u.status,
         password: makePasswordRecord(u.pass),
+        chatBanned: false,
         createdAt: Date.now(),
       });
     }
@@ -206,6 +208,11 @@ function ensureDb() {
     }
     if (user.role !== su.role) { user.role = su.role; changed = true; }
     if (user.status !== "active") { user.status = "active"; changed = true; }
+    if (user.chatBanned !== false && user.chatBanned !== true) { user.chatBanned = false; changed = true; }
+  }
+
+  for (const u of db.users) {
+    if (u.chatBanned !== false && u.chatBanned !== true) { u.chatBanned = false; changed = true; }
   }
 
   if (changed) {
@@ -258,6 +265,7 @@ function ensureDb1() {
     if (!s?.id) continue;
     if (seenSess.has(s.id)) continue;
     seenSess.add(s.id);
+    if (!s.status) s.status = "active";
     dedupedSessions.push(s);
   }
   db1.sessions = dedupedSessions;
@@ -310,7 +318,7 @@ function authRequired(req, res, next) {
   const user = getUserById(db, userId);
   if (!user) return res.status(401).json({ message: "Invalid session." });
 
-  req.user = { id: user.id, name: user.name, role: user.role, status: user.status };
+  req.user = { id: user.id, name: user.name, role: user.role, status: user.status, chatBanned: !!user.chatBanned };
   req.token = token;
   next();
 }
@@ -381,6 +389,7 @@ app.post("/api/auth/signup", (req, res) => {
     role: cleanRole,
     status: "pending",
     password: makePasswordRecord(String(password)),
+    chatBanned: false,
     createdAt: Date.now(),
   };
 
@@ -412,7 +421,7 @@ app.post("/api/auth/login", (req, res) => {
   res.json({
     message: "Login successful.",
     token,
-    user: { id: user.id, name: user.name, role: user.role, status: user.status },
+    user: { id: user.id, name: user.name, role: user.role, status: user.status, chatBanned: !!user.chatBanned },
   });
 });
 
@@ -463,6 +472,220 @@ app.post("/api/admin/users/:id/deny", authRequired, adminOnly, (req, res) => {
   res.json({ message: "User denied/removed.", removed: { id: removed.id, name: removed.name, role: removed.role } });
 });
 
+app.get("/api/admin/users", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const users = db.users.map(u => ({
+    id: u.id,
+    name: u.name,
+    role: u.role,
+    status: u.status,
+    createdAt: u.createdAt,
+    chatBanned: !!u.chatBanned,
+  }));
+  res.json({ users });
+});
+
+app.post("/api/admin/users/:id/promote-tutor", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const u = getUserById(db, req.params.id);
+  if (!u) return res.status(404).json({ message: "User not found." });
+
+  u.role = "Tutor";
+  if (u.status !== "active") u.status = "active";
+  writeDb(db);
+  io.emit("db:changed", { reason: "user_promoted", ts: Date.now(), userId: u.id });
+  res.json({ message: "User promoted to Tutor.", user: { id: u.id, name: u.name, role: u.role, status: u.status } });
+});
+
+app.post("/api/admin/users/:id/promote-admin", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const u = getUserById(db, req.params.id);
+  if (!u) return res.status(404).json({ message: "User not found." });
+
+  u.role = "Admin";
+  if (u.status !== "active") u.status = "active";
+  writeDb(db);
+  io.emit("db:changed", { reason: "user_promoted_admin", ts: Date.now(), userId: u.id });
+  res.json({ message: "User promoted to Admin.", user: { id: u.id, name: u.name, role: u.role, status: u.status } });
+});
+
+app.post("/api/admin/users/:id/update", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const u = getUserById(db, req.params.id);
+  if (!u) return res.status(404).json({ message: "User not found." });
+
+  const cleanName = req.body?.name ? String(req.body.name).trim() : null;
+  const allowedStatuses = new Set(["active", "pending", "suspended"]);
+  const allowedRoles = new Set(["Student", "Tutor", "Admin"]);
+
+  if (cleanName) {
+    if (db.users.some(x => x.id !== u.id && String(x.name).trim().toLowerCase() === cleanName.toLowerCase())) {
+      return res.status(409).json({ message: "Another user already has that name." });
+    }
+    u.name = cleanName;
+  }
+
+  if (req.body?.role && allowedRoles.has(req.body.role)) {
+    u.role = req.body.role;
+  }
+
+  if (req.body?.status && allowedStatuses.has(req.body.status)) {
+    u.status = req.body.status;
+  }
+
+  writeDb(db);
+  io.emit("db:changed", { reason: "user_updated", ts: Date.now(), userId: u.id });
+  res.json({ message: "User updated.", user: { id: u.id, name: u.name, role: u.role, status: u.status, chatBanned: !!u.chatBanned } });
+});
+
+app.post("/api/admin/users/:id/chat-block", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const u = getUserById(db, req.params.id);
+  if (!u) return res.status(404).json({ message: "User not found." });
+
+  u.chatBanned = true;
+  writeDb(db);
+  io.emit("db:changed", { reason: "chat_blocked", ts: Date.now(), userId: u.id });
+  res.json({ message: "User chat blocked.", user: { id: u.id, name: u.name, chatBanned: true } });
+});
+
+app.post("/api/admin/users/:id/chat-unblock", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const u = getUserById(db, req.params.id);
+  if (!u) return res.status(404).json({ message: "User not found." });
+
+  u.chatBanned = false;
+  writeDb(db);
+  io.emit("db:changed", { reason: "chat_unblocked", ts: Date.now(), userId: u.id });
+  res.json({ message: "User chat unblocked.", user: { id: u.id, name: u.name, chatBanned: false } });
+});
+
+app.get("/api/admin/sessions", authRequired, adminOnly, (req, res) => {
+  const db1 = readDb1();
+  const sessions = db1.sessions.map(s => {
+    const bookings = db1.bookings
+      .filter(b => b.sessionId === s.id)
+      .map(b => ({ id: b.id, studentId: b.studentId, studentName: b.studentName }));
+
+    return {
+      id: s.id,
+      tutorId: s.tutorId,
+      tutorName: s.tutorName,
+      topic: s.topic,
+      date: s.date,
+      time: s.time,
+      capacity: s.capacity,
+      status: s.status || "pending",
+      bookings: bookings.length,
+      bookingDetails: bookings,
+    };
+  });
+  res.json({ sessions });
+});
+
+app.post("/api/admin/sessions/:id/approve", authRequired, adminOnly, (req, res) => {
+  const db1 = readDb1();
+  const session = db1.sessions.find(s => s.id === req.params.id);
+  if (!session) return res.status(404).json({ message: "Session not found." });
+
+  session.status = "active";
+  writeDb1(db1);
+  io.emit("db:changed", { reason: "session_approved", sessionId: session.id, ts: Date.now() });
+  res.json({ message: "Session approved.", session });
+});
+
+app.post("/api/admin/sessions/:id/cancel", authRequired, adminOnly, (req, res) => {
+  const sessionId = req.params.id;
+  const db1 = readDb1();
+  const idx = db1.sessions.findIndex(s => s.id === sessionId);
+  if (idx === -1) return res.status(404).json({ message: "Session not found." });
+
+  const session = db1.sessions[idx];
+  db1.sessions.splice(idx, 1);
+
+  const before = db1.bookings.length;
+  db1.bookings = db1.bookings.filter(b => b.sessionId !== sessionId);
+  const removedBookings = before - db1.bookings.length;
+
+  writeDb1(db1);
+  io.emit("db:changed", { reason: "session_cancelled_admin", sessionId, ts: Date.now() });
+  res.json({ message: "Session cancelled by admin.", session, removedBookings });
+});
+
+app.get("/api/admin/reports/usage", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const db1 = readDb1();
+
+  const sessionsPerTutor = {};
+  const bookingsPerTutor = {};
+  const busiestDays = {};
+
+  for (const s of db1.sessions) {
+    sessionsPerTutor[s.tutorId] = (sessionsPerTutor[s.tutorId] || 0) + 1;
+    busiestDays[s.date] = (busiestDays[s.date] || 0) + 1;
+  }
+
+  for (const b of db1.bookings) {
+    const session = db1.sessions.find(s => s.id === b.sessionId);
+    if (!session) continue;
+    bookingsPerTutor[session.tutorId] = (bookingsPerTutor[session.tutorId] || 0) + 1;
+  }
+
+  res.json({
+    totalUsers: db.users.length,
+    totalSessions: db1.sessions.length,
+    totalBookings: db1.bookings.length,
+    sessionsPerTutor,
+    bookingsPerTutor,
+    busiestDays,
+  });
+});
+
+app.get("/api/admin/chat/rooms", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const rooms = Object.entries(db.rooms || {}).map(([roomId, room]) => {
+    const participants = (room.participants || []).map(pid => {
+      const u = getUserById(db, pid);
+      return { id: pid, name: u?.name || pid, role: u?.role };
+    });
+    const messages = room.messages || [];
+    const last = messages[messages.length - 1] || null;
+    return {
+      roomId,
+      participants,
+      messageCount: messages.length,
+      lastMessage: last ? { id: last.id, senderId: last.senderId, text: last.text, ts: last.ts } : null,
+    };
+  });
+
+  res.json({ rooms });
+});
+
+app.post("/api/admin/chat/rooms/:roomId/clear", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const room = db.rooms?.[req.params.roomId];
+  if (!room) return res.status(404).json({ message: "Room not found." });
+
+  room.messages = [];
+  writeDb(db);
+  io.to(req.params.roomId).emit("chat:history", { roomId: req.params.roomId, history: [] });
+  res.json({ message: "Chat history cleared.", roomId: req.params.roomId });
+});
+
+app.post("/api/admin/chat/rooms/:roomId/messages/:msgId/remove", authRequired, adminOnly, (req, res) => {
+  const db = readDb();
+  const room = db.rooms?.[req.params.roomId];
+  if (!room || !Array.isArray(room.messages)) return res.status(404).json({ message: "Room not found." });
+
+  const idx = room.messages.findIndex(m => m.id === req.params.msgId);
+  if (idx === -1) return res.status(404).json({ message: "Message not found." });
+
+  room.messages.splice(idx, 1);
+  writeDb(db);
+  io.to(req.params.roomId).emit("chat:history", { roomId: req.params.roomId, history: room.messages });
+  res.json({ message: "Message removed.", roomId: req.params.roomId, msgId: req.params.msgId });
+});
+
 // -------------------------
 // Sessions API (db1.json)
 // -------------------------
@@ -470,7 +693,12 @@ app.post("/api/admin/users/:id/deny", authRequired, adminOnly, (req, res) => {
 app.get("/api/sessions", authRequired, (req, res) => {
   const db1 = readDb1();
 
-  const sessions = db1.sessions
+  let list = db1.sessions;
+  if (req.user.role === "Student") {
+    list = list.filter(s => s.status === "active");
+  }
+
+  const sessions = list
     .map(s => {
       const booked = countBookingsForSession(db1, s.id);
       const bookedByMe =
@@ -488,6 +716,7 @@ app.get("/api/sessions", authRequired, (req, res) => {
         capacity: s.capacity,
         bookings: booked,
         bookedByMe,
+        status: s.status || "pending",
       };
     })
     .sort((a, b) => {
@@ -549,13 +778,13 @@ app.post("/api/sessions", authRequired, tutorOnly, (req, res) => {
     time,
     capacity,
     createdAt: now,
-    status: "active",
+    status: "pending",
   };
 
   db1.sessions.push(session);
   writeDb1(db1);
 
-  const body = { message: "Session created.", session };
+  const body = { message: "Session submitted for admin approval.", session };
   if (idem) idemRemember(idem, 201, body);
   return res.status(201).json(body);
 });
@@ -571,6 +800,11 @@ app.post("/api/sessions/:id/book", authRequired, studentOnly, (req, res) => {
     const body = { message: "Session not found." };
     if (idem) idemRemember(idem, 404, body);
     return res.status(404).json(body);
+  }
+  if (session.status !== "active") {
+    const body = { message: "Session is not approved yet." };
+    if (idem) idemRemember(idem, 409, body);
+    return res.status(409).json(body);
   }
 
     // NEW: Check for student schedule clashes
@@ -675,6 +909,7 @@ app.get("/api/schedule/student", authRequired, studentOnly, (req, res) => {
         tutorName: s.tutorName,
         date: s.date,
         time: s.time,
+        status: s.status || "active",
       };
     })
     .filter(Boolean)
@@ -707,6 +942,7 @@ app.get("/api/schedule/tutor", authRequired, tutorOnly, (req, res) => {
     capacity: s.capacity,
     bookings: (bySession.get(s.id) || []).length,
     students: (bySession.get(s.id) || []).sort((a, b) => a.studentName.localeCompare(b.studentName)),
+    status: s.status || "pending",
   }));
 
   res.json({ sessions });
@@ -718,6 +954,10 @@ app.get("/api/schedule/tutor", authRequired, tutorOnly, (req, res) => {
 app.get("/api/chat/partners", authRequired, (req, res) => {
   const db = readDb();
   const db1 = readDb1();
+
+  if (req.user.chatBanned) {
+    return res.json({ users: [] });
+  }
 
   if (!(req.user.role === "Student" || req.user.role === "Tutor")) {
     return res.json({ users: [] });
@@ -741,7 +981,7 @@ app.get("/api/chat/partners", authRequired, (req, res) => {
 
   const wantRole = req.user.role === "Student" ? "Tutor" : "Student";
   const users = db.users
-    .filter(u => u.status === "active" && u.role === wantRole && allowedIds.has(u.id))
+    .filter(u => u.status === "active" && u.role === wantRole && !u.chatBanned && allowedIds.has(u.id))
     .map(u => ({ id: u.id, name: u.name, role: u.role }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -785,6 +1025,9 @@ io.on("connection", (socket) => {
     const db1 = readDb1();
     const other = getUserById(db, otherUserId);
 
+    const meRecord = getUserById(db, me.id);
+    if (!meRecord || meRecord.chatBanned) return ack?.({ ok: false, error: "chat_banned" });
+
     if (!other || other.status !== "active") return ack?.({ ok: false, error: "user_not_found" });
 
     const pairOk =
@@ -815,6 +1058,9 @@ io.on("connection", (socket) => {
     if (!clean) return ack?.({ ok: false, error: "empty" });
 
     const db = readDb();
+    const freshMe = getUserById(db, me.id);
+    if (!freshMe || freshMe.chatBanned) return ack?.({ ok: false, error: "chat_banned" });
+
     const room = db.rooms[roomId];
     if (!room || !room.participants?.includes(me.id)) return ack?.({ ok: false, error: "not_in_room" });
 

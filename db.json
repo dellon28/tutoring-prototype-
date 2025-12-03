@@ -10,7 +10,8 @@
         "hash": "098781bfd82f202a428cb258d9c2b6fc3665f3b00b5982431c48a79e9c6f8021003bbaf4f5cc73b0d37d077b21b23a0f8f04eb3afded70b442634e8394cefaf5",
         "algo": "scrypt"
       },
-      "createdAt": 1764649149721
+      "createdAt": 1764649149721,
+      "chatBanned": false
     },
     {
       "id": "admin-1",
@@ -22,7 +23,8 @@
         "hash": "a21ce401c0d1a7f5390254deb41804d60e56af4a234f1e537e2008df0c6e222e92300e0130ab6064351c9b0fe0aca173addf43bf33b0f80038b89b39bae65641",
         "algo": "scrypt"
       },
-      "createdAt": 1764649521030
+      "createdAt": 1764649521030,
+      "chatBanned": false
     },
     {
       "id": "tutor-1",
@@ -34,7 +36,8 @@
         "hash": "740999330cfb8d67358618b810f365fa46f14ac907964740263b2318a927c97a488bd3c883827399e0435688e4ea9b1899c2dcfa3337d1787a102baa28124bed",
         "algo": "scrypt"
       },
-      "createdAt": 1764649521064
+      "createdAt": 1764649521064,
+      "chatBanned": false
     },
     {
       "id": "student-1",
@@ -46,7 +49,8 @@
         "hash": "10c4678bf4ca448b47d0a317047dc6155a1ea14147be7fbff4a9f06547e16b6fcd963632f00fa611c9b9daf03bfea97582d8e5574a1c4472b91f39f6b7f87816",
         "algo": "scrypt"
       },
-      "createdAt": 1764649521099
+      "createdAt": 1764649521099,
+      "chatBanned": false
     },
     {
       "id": "06747a23-6010-48f1-8a4e-3d2b0ade954b",
@@ -58,7 +62,8 @@
         "hash": "97ff9e7e7fc9328b7d5908ad593790a44bfab38eacdc79a33ec9c215a074815a2dbef43c971171a158a28a90c6ab2fb24e5843fe9f40cc0d814613bab05b0adf",
         "algo": "scrypt"
       },
-      "createdAt": 1764649972227
+      "createdAt": 1764649972227,
+      "chatBanned": false
     },
     {
       "id": "baefd4af-9bad-4f25-af4e-1c50ba2c2a97",
@@ -70,7 +75,8 @@
         "hash": "1bbbcb4f200ed1758c79f812d41daab8b7a77b3bc53442409b27be4511147a5d7d63c5a643d37ae3796654cc8d0db44bb02b41204c91ac92be937150af8365bf",
         "algo": "scrypt"
       },
-      "createdAt": 1764676081659
+      "createdAt": 1764676081659,
+      "chatBanned": false
     },
     {
       "id": "36705a1b-48b3-4dab-9fdd-698088f388ef",
@@ -82,7 +88,8 @@
         "hash": "ba014fffe27f4e432771d0326c72e7a5be86fc5c3af9567e864c9c3bd48220134112a64a1314aed9055cb28fa281ba154d2fa6daaa30f7499c901242d484d448",
         "algo": "scrypt"
       },
-      "createdAt": 1764680863703
+      "createdAt": 1764680863703,
+      "chatBanned": false
     },
     {
       "id": "ce9e4ddd-aeeb-4723-802d-d1ca00830c94",
@@ -94,19 +101,21 @@
         "hash": "daf8098284999ef0b6fc82bcffab33bb1dcdf2e9acce829a94c714f4d0db285c058ee57a0d933e81be9d4a494bd1d9fa10ef9ca1c1c9e05e2932edb030989f04",
         "algo": "scrypt"
       },
-      "createdAt": 1764683287194
+      "createdAt": 1764683287194,
+      "chatBanned": false
     },
     {
       "id": "1e99e7c2-c013-4630-8263-31357df6dada",
       "name": "Grace Kennedy",
-      "role": "Student",
+      "role": "Tutor",
       "status": "active",
       "password": {
         "salt": "39dfeb7b079c2769d9a289665c8063ae",
         "hash": "c20f01e81057c8b33a331318fc5313fff22a5096e7d4ad76ff7b8d2b383011a3e05b7e11272dcfb5aa60724dfdb3256c9724effa9ccacacb3189e2246319581a",
         "algo": "scrypt"
       },
-      "createdAt": 1764704671847
+      "createdAt": 1764704671847,
+      "chatBanned": false
     }
   ],
   "rooms": {
@@ -115,17 +124,7 @@
         "58443d5f-882b-4f70-9854-9d08e64d0143",
         "tutor-1"
       ],
-      "messages": [
-        {
-          "id": "b9810980-bd40-488f-87d1-ebe17affb8bc",
-          "roomId": "dm:58443d5f-882b-4f70-9854-9d08e64d0143:tutor-1",
-          "senderId": "58443d5f-882b-4f70-9854-9d08e64d0143",
-          "senderName": "jack",
-          "senderRole": "Student",
-          "text": "try",
-          "ts": 1764649627874
-        }
-      ]
+      "messages": []
     },
     "dm:06747a23-6010-48f1-8a4e-3d2b0ade954b:58443d5f-882b-4f70-9854-9d08e64d0143": {
       "participants": [

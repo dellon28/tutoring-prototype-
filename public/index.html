@@ -171,7 +171,7 @@
   // -------------------------
   // State
   // -------------------------
-  let currentUser = { id: null, name: null, role: null, status: null };
+  let currentUser = { id: null, name: null, role: null, status: null, chatBanned: false };
   let authToken = localStorage.getItem("AUTH_TOKEN") || null;
 
   let currentPage = "home"; // home | schedule
@@ -183,6 +183,7 @@
   let chatEnableInFlight = false;
   let createInFlight = false;
   let cancelInFlight = false;
+  let adminData = { pending: [], users: [], sessions: [], reports: null, chatRooms: [] };
 
   // cache for tutor schedule view
   let tutorScheduleCache = { sessions: [] };
@@ -295,7 +296,7 @@
     disconnectSocket();
 
     currentRoomId = null;
-    currentUser = { id:null, name:null, role:null, status:null };
+    currentUser = { id:null, name:null, role:null, status:null, chatBanned:false };
     currentPage = "home";
   }
 
@@ -473,7 +474,7 @@
     host.innerHTML = `
       <div class="dashboard">
         <h2>📝 Tutor Session Management</h2>
-        <p>Welcome, ${escapeHtml(currentUser.name)}! Create a new session or view your current sessions.</p>
+        <p>Welcome, ${escapeHtml(currentUser.name)}! Create a new session or view your current sessions. New sessions stay <b>pending</b> until an admin approves them.</p>
 
         <h3>Create New Session</h3>
         <form id="create-session-form" class="form-group" onsubmit="handleCreateSession(event)">
@@ -521,7 +522,8 @@
       <div class="session-card">
         <h4>${escapeHtml(s.topic)}</h4>
         <p><strong>Date/Time:</strong> ${escapeHtml(s.date)} at ${escapeHtml(s.time)}<br>
-           <strong>Bookings:</strong> ${s.bookings}/${s.capacity}</p>
+           <strong>Bookings:</strong> ${s.bookings}/${s.capacity}<br>
+           <strong>Status:</strong> ${escapeHtml(s.status)}</p>
         <button class="btn btn-danger" onclick="cancelSession('${s.id}')">CANCEL</button>
       </div>
     `).join("");
@@ -648,6 +650,7 @@
 
     panel.innerHTML = `
       <h3>Booked Students</h3>
+      <div class="muted">Status: ${escapeHtml(s.status || "pending")}</div>
       <table>
         <thead><tr><th>Student Name</th><th>Student ID</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -726,6 +729,222 @@
     }
   }
 
+  // New admin features
+  async function renderAdminView() {
+    const host = document.getElementById('app-content');
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>Admin Control Panel</h2>
+        <div class="muted">Loading admin data...</div>
+      </div>
+    `;
+
+    try {
+      const [pendingRes, usersRes, sessionsRes, reportsRes, chatRes] = await Promise.all([
+        api("/api/admin/pending"),
+        api("/api/admin/users"),
+        api("/api/admin/sessions"),
+        api("/api/admin/reports/usage"),
+        api("/api/admin/chat/rooms")
+      ]);
+
+      adminData = {
+        pending: pendingRes.pending || [],
+        users: usersRes.users || [],
+        sessions: sessionsRes.sessions || [],
+        reports: reportsRes || null,
+        chatRooms: chatRes.rooms || [],
+      };
+    } catch (e) {
+      host.innerHTML = `
+        <div class="dashboard">
+          <h2>Admin Control Panel</h2>
+          <div class="error">Failed to load admin data: ${escapeHtml(e.message)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const pendingRows = adminData.pending.length
+      ? adminData.pending.map(u => `
+        <tr>
+          <td>${escapeHtml(u.id)}</td>
+          <td>${escapeHtml(u.name)}</td>
+          <td>${escapeHtml(u.role)}</td>
+          <td>
+            <button class="btn btn-success" onclick="approveUser('${u.id}')">Approve</button>
+            <button class="btn btn-danger" onclick="denyUser('${u.id}')">Deny</button>
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4" style="text-align:center;">No pending requests.</td></tr>`;
+
+    const userRows = adminData.users.length
+      ? adminData.users.map(u => `
+        <tr>
+          <td>${escapeHtml(u.name)}</td>
+          <td>${escapeHtml(u.role)}</td>
+          <td>${escapeHtml(u.status)}</td>
+          <td>${u.chatBanned ? '<span class="error">Chat blocked</span>' : 'Chat ok'}</td>
+          <td>
+            <button class="btn btn-muted" onclick="adminEditUser('${u.id}')">Edit</button>
+            <button class="btn btn-success" onclick="adminPromote('${u.id}','Tutor')">Promote Tutor</button>
+            <button class="btn btn-primary" onclick="adminPromote('${u.id}','Admin')">Promote Admin</button>
+            <button class="btn ${u.chatBanned ? 'btn-success' : 'btn-danger'}" onclick="adminToggleChatBlock('${u.id}', ${u.chatBanned ? 'true' : 'false'})">${u.chatBanned ? 'Unblock Chat' : 'Block Chat'}</button>
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="5" style="text-align:center;">No users found.</td></tr>`;
+
+    const sessionRows = adminData.sessions.length
+      ? adminData.sessions.map(s => `
+        <tr>
+          <td>${escapeHtml(s.topic)}</td>
+          <td>${escapeHtml(s.tutorName)} (${escapeHtml(s.tutorId)})</td>
+          <td>${escapeHtml(s.date)} ${escapeHtml(s.time)}</td>
+          <td>${s.bookings}/${s.capacity}</td>
+          <td>${escapeHtml(s.status)}</td>
+          <td>
+            ${s.status !== 'active' ? `<button class="btn btn-success" onclick="adminApproveSession('${s.id}')">Approve</button>` : ''}
+            <button class="btn btn-danger" onclick="adminCancelSession('${s.id}')">Cancel</button>
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="6" style="text-align:center;">No sessions yet.</td></tr>`;
+
+    const chatRows = adminData.chatRooms.length
+      ? adminData.chatRooms.map(r => `
+        <tr>
+          <td>${escapeHtml(r.roomId)}</td>
+          <td>${r.participants.map(p => escapeHtml(p.name || p.id)).join(" , ")}</td>
+          <td>${r.messageCount}</td>
+          <td>${r.lastMessage ? escapeHtml(r.lastMessage.text || "") : "(none)"}</td>
+          <td><button class="btn btn-danger" onclick="adminClearChat('${r.roomId}')">Clear</button></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="5" style="text-align:center;">No chats yet.</td></tr>`;
+
+    const reports = adminData.reports || {};
+    const sessionsPerTutorText = Object.keys(reports.sessionsPerTutor || {}).length
+      ? Object.entries(reports.sessionsPerTutor).map(([tid, count]) => `${escapeHtml(tid)}: ${count}`).join(", ")
+      : "No data";
+    const busiestDaysText = Object.keys(reports.busiestDays || {}).length
+      ? Object.entries(reports.busiestDays).map(([day, count]) => `${escapeHtml(day)} (${count})`).join(", ")
+      : "No data";
+
+    host.innerHTML = `
+      <div class="dashboard">
+        <h2>Admin Control Panel</h2>
+        <p>Manage tutors, sessions, approvals, and chat oversight.</p>
+
+        <h3>Pending Registrations</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Action</th></tr></thead>
+          <tbody>${pendingRows}</tbody>
+        </table>
+
+        <h3>All Users</h3>
+        <table>
+          <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Chat</th><th>Actions</th></tr></thead>
+          <tbody>${userRows}</tbody>
+        </table>
+
+        <h3>All Sessions</h3>
+        <table>
+          <thead><tr><th>Topic</th><th>Tutor</th><th>Date/Time</th><th>Bookings</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${sessionRows}</tbody>
+        </table>
+
+        <h3>Usage Snapshot</h3>
+        <ul>
+          <li>Total users: ${reports.totalUsers ?? 0}</li>
+          <li>Total sessions: ${reports.totalSessions ?? 0}</li>
+          <li>Total bookings: ${reports.totalBookings ?? 0}</li>
+        </ul>
+        <div class="muted">Sessions per tutor: ${sessionsPerTutorText}</div>
+        <div class="muted">Busiest days: ${busiestDaysText}</div>
+
+        <h3>Chat Oversight</h3>
+        <table>
+          <thead><tr><th>Room</th><th>Participants</th><th>Messages</th><th>Last message</th><th>Action</th></tr></thead>
+          <tbody>${chatRows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function adminPromote(id, role) {
+    const path = role === "Admin" ? "promote-admin" : "promote-tutor";
+    try {
+      await api(`/api/admin/users/${id}/${path}`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification(`User promoted to ${role}.`);
+      renderPage();
+    } catch (e) {
+      alert("Promote failed: " + e.message);
+    }
+  }
+
+  async function adminEditUser(id) {
+    const name = prompt("New name (leave blank to keep current):");
+    const role = prompt("Role (Student, Tutor, Admin) - leave blank to keep current:");
+    const status = prompt("Status (active, pending, suspended) - leave blank to keep current:");
+
+    try {
+      await api(`/api/admin/users/${id}/update`, {
+        method: "POST",
+        body: { name: name || undefined, role: role || undefined, status: status || undefined },
+        idempotencyKey: newIdempotencyKey(),
+      });
+      triggerNotification("User updated.");
+      renderPage();
+    } catch (e) {
+      alert("Update failed: " + e.message);
+    }
+  }
+
+  async function adminToggleChatBlock(id, currentlyBlocked) {
+    const path = currentlyBlocked ? "chat-unblock" : "chat-block";
+    try {
+      await api(`/api/admin/users/${id}/${path}`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification(currentlyBlocked ? "Chat unblocked." : "Chat blocked.");
+      renderPage();
+    } catch (e) {
+      alert("Chat action failed: " + e.message);
+    }
+  }
+
+  async function adminApproveSession(id) {
+    try {
+      await api(`/api/admin/sessions/${id}/approve`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification("Session approved.");
+      renderPage();
+    } catch (e) {
+      alert("Approve failed: " + e.message);
+    }
+  }
+
+  async function adminCancelSession(id) {
+    if (!confirm("Cancel this session for everyone?")) return;
+    try {
+      await api(`/api/admin/sessions/${id}/cancel`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification("Session cancelled by admin.");
+      renderPage();
+    } catch (e) {
+      alert("Cancel failed: " + e.message);
+    }
+  }
+
+  async function adminClearChat(roomId) {
+    if (!confirm("Clear chat history for this room?")) return;
+    try {
+      await api(`/api/admin/chat/rooms/${roomId}/clear`, { method: "POST", idempotencyKey: newIdempotencyKey() });
+      triggerNotification("Chat history cleared.");
+      renderPage();
+    } catch (e) {
+      alert("Clear failed: " + e.message);
+    }
+  }
+
   // -------------------------
   // Actions: create + book + cancel
   // -------------------------
@@ -749,7 +968,7 @@
         idempotencyKey: newIdempotencyKey()
       });
 
-      triggerNotification(`Session created: ${data.session.topic} on ${data.session.date} at ${data.session.time}`);
+      triggerNotification(data.message || `Session submitted: ${data.session.topic} on ${data.session.date} at ${data.session.time}`);
       await renderPage();
     } catch (err) {
       alert("Create failed: " + err.message);
@@ -802,14 +1021,14 @@
       console.warn("socket error:", err?.message || err);
     });
 
-    socket.on("db:changed", ({ reason } = {}) => {
+    socket.on("db:changed", ({ reason, userId } = {}) => {
       if (currentUser.role === "Admin") {
         renderAdminView();
         return;
       }
 
       // ✅ session cancel affects sessions, schedules, and chat partners
-      if (reason === "session_cancelled") {
+      if (reason === "session_cancelled" || reason === "session_cancelled_admin" || reason === "session_approved") {
         renderPage();
         return;
       }
@@ -817,6 +1036,10 @@
       if ((currentUser.role === "Student" || currentUser.role === "Tutor") &&
           (reason === "booking_created" || reason === "user_approved" || reason === "signup_submitted")) {
         loadChatPartners().catch(() => {});
+      }
+      if ((reason === "chat_blocked" || reason === "chat_unblocked") && userId === currentUser.id) {
+        currentUser.chatBanned = reason === "chat_blocked";
+        renderPage();
       }
     });
 
@@ -923,6 +1146,8 @@
       if (!ack?.ok) {
         if (ack?.error === "not_booked") {
           setChatStatus("Chat locked: you must book a session with this tutor/student first.");
+        } else if (ack?.error === "chat_banned") {
+          setChatStatus("Chat disabled by admin.");
         } else {
           setChatStatus(`Join failed: ${ack?.error || "unknown"}`);
         }
@@ -940,8 +1165,13 @@
     try {
       const chatRoot = document.getElementById("chat-root");
       const allowed = (currentUser.role === "Student" || currentUser.role === "Tutor");
-      if (!allowed || !authToken) {
+      if (!allowed || !authToken || currentUser.chatBanned) {
         disableChat();
+        if (currentUser.chatBanned && chatRoot) {
+          chatRoot.style.display = "block";
+          document.getElementById("chat-status").textContent = "Chat disabled by admin.";
+          document.getElementById("chat-messages").innerHTML = "";
+        }
         return;
       }
 
@@ -981,7 +1211,10 @@
       if (!text) return;
 
       socket.emit("chat:send", { roomId: currentRoomId, text }, (ack) => {
-        if (!ack?.ok) console.warn("chat send failed", ack);
+        if (!ack?.ok) {
+          if (ack?.error === "chat_banned") setChatStatus("Chat disabled by admin.");
+          console.warn("chat send failed", ack);
+        }
       });
 
       input.value = "";

@@ -43,6 +43,17 @@
       "capacity": 5,
       "createdAt": 1764704746706,
       "status": "active"
+    },
+    {
+      "id": "43807442-860d-4a75-a3d2-26bb872839cf",
+      "tutorId": "tutor-1",
+      "tutorName": "Dr. Smith",
+      "topic": "Physics 101 Review",
+      "date": "2025-12-13",
+      "time": "11:00",
+      "capacity": 5,
+      "createdAt": 1764735624640,
+      "status": "active"
     }
   ],
   "bookings": [
