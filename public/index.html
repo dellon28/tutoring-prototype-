@@ -787,7 +787,6 @@
           <td>${escapeHtml(u.status)}</td>
           <td>${u.chatBanned ? '<span class="error">Chat blocked</span>' : 'Chat ok'}</td>
           <td>
-            <button class="btn btn-muted" onclick="adminEditUser('${u.id}')">Edit</button>
             <button class="btn ${u.chatBanned ? 'btn-success' : 'btn-danger'}" onclick="adminToggleChatBlock('${u.id}', ${u.chatBanned ? 'true' : 'false'})">${u.chatBanned ? 'Unblock Chat' : 'Block Chat'}</button>
           </td>
         </tr>
@@ -994,6 +993,8 @@
     try {
       const data = await api(`/api/sessions/${sessionId}/cancel`, {
         method: "POST",
+        // send an empty JSON body so the server parser never balks on an empty payload
+        body: {},
         idempotencyKey: newIdempotencyKey()
       });
 
