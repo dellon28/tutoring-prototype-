@@ -788,8 +788,6 @@
           <td>${u.chatBanned ? '<span class="error">Chat blocked</span>' : 'Chat ok'}</td>
           <td>
             <button class="btn btn-muted" onclick="adminEditUser('${u.id}')">Edit</button>
-            <button class="btn btn-success" onclick="adminPromote('${u.id}','Tutor')">Promote Tutor</button>
-            <button class="btn btn-primary" onclick="adminPromote('${u.id}','Admin')">Promote Admin</button>
             <button class="btn ${u.chatBanned ? 'btn-success' : 'btn-danger'}" onclick="adminToggleChatBlock('${u.id}', ${u.chatBanned ? 'true' : 'false'})">${u.chatBanned ? 'Unblock Chat' : 'Block Chat'}</button>
           </td>
         </tr>
